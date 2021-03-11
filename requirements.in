@@ -1,10 +1,13 @@
-git+ssh://git@github.com/Ensembl/ensembl-prodinf-core.git#egg=ensembl-prodinf-core
+git+git://github.com/Ensembl/ensembl-prodinf-core.git#egg=ensembl-prodinf-core
 celery
 Click
 elasticsearch>=6.8.1,<7.0.0
 Flask
-flasgger
+#flasgger
+git+git://github.com/flasgger/flasgger@396aca1e0ac1ca60d8b201a3aa10cca94073d010#egg=flasgger
 Flask-Cors
+pytest
+pytest-docker
 gunicorn
 radical.saga
 radical.utils

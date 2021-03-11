@@ -1,0 +1,117 @@
+version: '3'
+
+services:
+
+  rabbitmq:
+    container_name: 'ensrabbitmq'
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - "./data:/var/lib/rabbitmq:rw"
+      - "./qrp_ensdev.json:/opt/definitions.json:rw" 
+      - "./rabbitmq.config:/etc/rabbitmq/rabbitmq.conf"  
+    networks:
+      - productionsrv       
+
+  event_app:
+   build: '.'
+   container_name: 'event_app'
+   command: "/usr/local/bin/gunicorn --config /app/gunicorn_config.py -b 0.0.0.0:5000 ensembl.production.event.app.main:app"
+   ports:
+     - "5008:5000"        
+   networks:
+     - productionsrv 
+
+  celery-process:  
+   build: '.'
+   ports:
+     - "5012:5000"     
+   container_name: 'celery-process'
+   command: "celery -A ensembl.production.event.celery.tasks worker -l info -Q qrp -n qrp-process@%%h"
+   networks:
+     - productionsrv
+
+  celery-monitor:  
+   build: '.' 
+   ports:
+     - "5013:5000"      
+   container_name: 'celery-monitor'
+   command: "celery -A ensembl.production.event.celery.tasks worker -l info -Q monitor -n qrp-monitor@%%h"
+   networks:
+     - productionsrv     
+
+  es01: &es_setup
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    container_name: es01
+    environment:
+      - http.port=9400
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es04,es03
+      - cluster.initial_master_nodes=es01,es04,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data01:/usr/share/elasticsearch/data
+    ports:
+      - 9400:9400
+    networks:
+      - productionsrv  
+
+  es04:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    container_name: es04
+    environment:
+      - node.name=es04
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es04,es03
+      - node.data=false
+      - node.master=true
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data02:/usr/share/elasticsearch/data
+    networks:
+      - productionsrv
+
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    container_name: es03
+    environment:
+      - node.name=es03
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es04
+      - cluster.initial_master_nodes=es01,es04,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data03:/usr/share/elasticsearch/data
+    networks:
+      - productionsrv      
+
+volumes:
+  data01:
+    driver: local
+  data02:
+    driver: local
+  data03:
+    driver: local      
+
+networks:
+  productionsrv:
+    driver: bridge           

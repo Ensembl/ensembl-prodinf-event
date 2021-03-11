@@ -5,14 +5,14 @@ import json
 import logging
 import re
 
-from ensembl.event.celery.celery import app
-from ensembl.event.client import EventClient
-from ensembl.event.client import QrpClient
-import ensembl.event.config as cfg
+from ensembl.production.event.celery.celery import app
+from ensembl.production.event.client import EventClient
+from ensembl.production.event.client import QrpClient
+from ensembl.production.event.config import EventCeleryConfig as cfg
 
-from ensembl.workflow.monitor import RemoteCmd
-from ensembl.workflow.hive import construct_pipeline
-from ensembl.workflow.dispatcher import WorkflowDispatcher
+from ensembl.production.workflow.monitor import RemoteCmd
+from ensembl.production.workflow.hive import construct_pipeline
+from ensembl.production.workflow.dispatcher import WorkflowDispatcher
 
 from ensembl.production.core.amqp_publishing import AMQPPublisher
 from ensembl.production.core.reporting import make_report, ReportFormatter

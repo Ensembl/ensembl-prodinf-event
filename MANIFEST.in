@@ -1,5 +1,5 @@
 include LICENSE
 include NOTICE
 include VERSION
-include src/ensembl/event/event_lookup.json
-include src/ensembl/event/process_lookup.json
+include src/ensembl/production/event/event_lookup.json
+include src/ensembl/production/event/process_lookup.json

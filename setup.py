@@ -57,7 +57,7 @@ setup(
     keywords='ensembl, event, production',
     entry_points={
         'console_scripts': [
-            'event_api = ensembl.event.runserver:main'
+            'event_api = ensembl.production.event.runserver:main'
         ]
     }
 )
