@@ -16,6 +16,7 @@
     "error" : "",
     "ENS_VERSION": "{{ spec['ENS_VERSION'] if 'ENS_VERSION' in spec else '' }}",
     "EG_VERSION": "{{ spec['EG_VERSION'] if spec['EG_VERSION'] else '' }}",
+    "RR_VERSION": "{{ spec['RR_VERSION'] if spec['RR_VERSION'] else '' }}",
     "contact": "{{ spec['contact'] if 'contact' in spec else '' }}",
     "comment": "{{ spec['comment'] if 'comment' in spec else '' }}",
     "user":  "{{ spec['user'] if 'user' in spec else '' }}",  {# remember the , #}

@@ -10,7 +10,7 @@ def construct_pipeline(job, spec):
     # for init pipeline
     for key, value in job['PipeParams']['params'].items():
 
-        if key in ('-division', '-species', '-antispecies'):
+        if key in ('-division', '-species', '-antispecies', '-group'):
             for each_item in value.split(','):
                 temp['init']['args'].append(key)
                 temp['init']['args'].append(each_item)
