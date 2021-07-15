@@ -3,3 +3,7 @@ include NOTICE
 include VERSION
 include src/ensembl/production/event/event_lookup.json
 include src/ensembl/production/event/process_lookup.json
+include src/ensembl/production/event/event_config.dev.yaml
+include src/ensembl/production/event/templates/*
+include src/ensembl/production/event/static/css/*
+include src/ensembl/production/event/static/js/*

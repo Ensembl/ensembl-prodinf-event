@@ -18,13 +18,10 @@ with open(Path(__file__).parent / 'README.md') as f:
 with open(Path(__file__).parent / 'VERSION') as f:
     version = f.read()
 
-
 def import_requirements():
     """Import ``requirements.txt`` file located at the root of the repository."""
     with open(Path(__file__).parent / 'requirements.txt') as file:
         return [line.rstrip() for line in file.readlines()]
-
-
 
 setup(
     name='event',

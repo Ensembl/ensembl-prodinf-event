@@ -47,27 +47,16 @@ class WorkflowDispatcher():
     def create_template(self, spec, division=None, species=None, antispecies=None):
         template = WorkflowDispatcher.templateEnv.get_template(self._get_template())
         flow_json = template.render(spec=spec, division=division, species=species, antispecies=antispecies)
-        print(flow_json)
         return json.loads(flow_json)  # this is where to put args to the template renderer
 
 
 
-obj = WorkflowDispatcher('core')
-flow = obj.create_template({
-			"src_uri": "mysql://ensro@mysql-ens-plants-prod-1:4243/malus_domestica_golden_variation_52_105_1",
-			"database": "malus_domestica_golden_variation_52_105_1",
-			"contact": "gnaamati@ebi.ac.uk",
-			"comment": "variation handover after SIFT run",
-			"source": "Handover",
-			"handover_token": "48d9a56c-dffe-11eb-909f-005056ab00f0",
-			"progress_total": 3,
-			"tgt_uri": "mysql://ensprod:scr1b3s1@mysql-ens-sta-3-b:4686/malus_domestica_golden_variation_52_105_1",
-			"staging_uri": "mysql://ensprod:scr1b3s1@mysql-ens-sta-3-b:4686/",
-			"progress_complete": 3,
-			"db_division": "plants",
-			"db_type": "variation",
-			"dc_job_id": 9990,
-			"copy_job_id": "b8df436c-dffe-11eb-a718-005056ab00f0",
-			"metadata_job_id": 184
-		}, division='plants')
-print(flow)
+# obj = WorkflowDispatcher('core')
+# flow = obj.create_template({
+# 			"src_uri": "mysql://ensro@mysql-ens-plants-prod-1:4243/malus_domestica_golden_variation_52_105_1",
+# 			"database": "malus_domestica_golden_variation_52_105_1",
+# 			"contact": "gnaamati@ebi.ac.uk",
+# 			"comment": "variation handover after SIFT run",
+# 			"handover_token": "48d9a56c-dffe-11eb-909f-005056ab00f0",
+# 		}, division='plants')
+# print(flow)

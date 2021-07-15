@@ -70,7 +70,7 @@ class QrpClient(RestClient):
         """
         try:
             logging.info("Submitting job")
-            uri = self.uri + '/qrp/submit/job'
+            uri = self.uri + '/submit/workflow'
             r = requests.post(uri, json=spec)
             r.raise_for_status()
         except requests.exceptions.HTTPError as err:
@@ -86,7 +86,7 @@ class QrpClient(RestClient):
           spec : payload with pipeline flow 
         """
         logging.info("Submitting job")
-        uri = self.uri + '/qrp/jobs'
+        uri = self.uri + '/add/record'
         r = requests.post(uri, json=spec)
         #r.raise_for_status()
         return r.json
@@ -99,7 +99,7 @@ class QrpClient(RestClient):
           spec : spec
         """
         try: 
-            uri = self.uri + '/qrp/jobs'
+            uri = self.uri + '/add/record'
             r = requests.put(uri, json=spec)
             r.raise_for_status()
             return r.json
