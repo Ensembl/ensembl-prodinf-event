@@ -1,0 +1,25 @@
+Bootstrap-Flask
+celery>=5.0.0,<5.0.5 # komobu==5.0 declared in core is not compatible with clery 5.1
+Click
+ensembl-prodinf-core@git+https://github.com/Ensembl/ensembl-prodinf-core.git#egg=ensembl-prodinf-core
+elasticsearch>=6.8.1,<7.0.0
+Flask
+git+git://github.com/flasgger/flasgger@396aca1e0ac1ca60d8b201a3aa10cca94073d010#egg=flasgger
+apispec
+Flask-Cors
+flask_wtf
+marshmallow
+apispec
+pytest
+pytest-docker
+gunicorn
+mysqlclient
+radical.saga
+radical.utils
+requests
+SQLAlchemy
+sqlalchemy_utils==0.37.0
+wtforms
+Jinja2
+python-dotenv==0.17.1
+
