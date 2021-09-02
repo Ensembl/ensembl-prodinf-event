@@ -1,4 +1,5 @@
 from flasgger import Swagger, SwaggerView, Schema, fields
+from marshmallow.validate import OneOf
 
 class HandoverSpec(Schema):
     
@@ -25,3 +26,25 @@ class HandoverSpec(Schema):
     ENS_VERSION = fields.Int(metadata={'description': 'Ensembl release number' , 'example': '105'}, required=True)  
     EG_VERSION = fields.Int(metadata={'description': 'Ensembl Genomes release number', 'example': '52'}, required=True) 
     RR_VERSION = fields.Int(metadata={'description': 'Rapid Release number', 'example': '24'}, required=True)    
+
+class RestartHandoverSpec(Schema):
+    handover_token = fields.UUID(metadata={'description': 'Handover Token UID',
+                                       'example': '3729-jhshs-12929-1mssn'}, required=True)
+
+    restart_type =  fields.Str(required=True, validate=OneOf(['BEEKEEPER',
+                                          'INIT_PIPELINE',
+                                          'SKIP_CURRENT_PIPELINE',
+                                          'WORKFLOW']),
+                                           metadata={'description': 'Restart BEEKEEPER/PIPELINE/WORKFLOW',
+                                           'example': 'BEEKEEPER'}, default="BEEKEEPER")
+
+class StopHandoverSpec(Schema):
+    handover_token = fields.UUID(metadata={'description': 'Handover Token UID',
+                                       'example': '3729-jhshs-12929-1mssn'}, required=True)
+
+    job_id = fields.Str(metadata={'description': 'pipeline job_id for running pipeline'}, required=False)
+
+    pipeline_name = fields.Str(metadata={'description': 'Pipeline name to stop celery job'}, required=False) 
+
+
+    
