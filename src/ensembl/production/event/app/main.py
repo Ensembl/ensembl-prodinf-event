@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify, Response, redirect, url_for, render_t
 from flask_cors import CORS
 from flasgger import Swagger, SwaggerView, Schema, fields
 from flask_bootstrap import Bootstrap
+from celery import states
 
 
 from ensembl.production.event.config import EventConfig as config
@@ -19,8 +20,8 @@ from ensembl.production.core.exceptions import HTTPRequestError
 from ensembl.production.core.amqp_publishing import AMQPPublisher
 from ensembl.production.core.reporting import make_report, ReportFormatter
 
-from ensembl.production.event.celery_app.tasks import initiate_pipeline
-from ensembl.production.event.models.schema import HandoverSpec
+from ensembl.production.event.celery_app.tasks import initiate_pipeline, restart_workflow, stop_running_job
+from ensembl.production.event.models.schema import HandoverSpec, RestartHandoverSpec, StopHandoverSpec
 
 from elasticsearch import Elasticsearch, TransportError, NotFoundError
 
@@ -113,6 +114,8 @@ def handle_process_not_found_error(e):
     return jsonify(error=str(e)), 404
   
 
+
+
 class EventWorkflow(SwaggerView):
     parameters=HandoverSpec  
     tags = [ "Submit Event Workflow job " ]
@@ -128,13 +131,28 @@ class EventWorkflow(SwaggerView):
         """
         try:
             if json_pattern.match(request.headers['Content-Type']):
+
+                errors = HandoverSpec().validate(request.json) 
+                if errors:
+                    raise ValueError(errors)
+
                 job = request.json
-                spec = job.get('spec', None)
-                if spec and spec['handover_token']:
-                    res = initiate_pipeline(spec)
+                # spec = job.get('spec', None)
+                if job and job['handover_token']:
+
+                    #check workflow with handover_token exists         
+                    res = EventWorkflowJobStatus().get(handover_token=job['handover_token'])
+                    spec = res.get_json()
+
+                    if spec is not None and  len(spec) > 0:
+                        raise ValueError(f"Workflow with handover token {job['handover_token']} already exist, restart the workflow if needed")
+
+                    # start the workflow
+                    res = initiate_pipeline(job)
                     if res['status']:
-                        return redirect(url_for('qrp'))
-                    raise ValueError(res['error'])
+                        return redirect(url_for('EventWorkflowJobStatus'))
+                    else:
+                        raise ValueError(res['error'])
                 else:
                     raise ValueError('spec and result object not fount in payload' )
             else:
@@ -142,9 +160,104 @@ class EventWorkflow(SwaggerView):
         except Exception as e:
             return Response(str(e) , status=400) 
 
+class EventRestartWorkflow(SwaggerView):
+    parameters=RestartHandoverSpec  
+    tags = [ "Restart Event Workflow " ]
+    responses = {
+        200: {
+            "description": "Handover Token for Workflow",
+        }
+    }
+
+    def post(self):
+        """
+        Restart Event Workflow 
+        """
+        try:
+            
+            if json_pattern.match(request.headers['Content-Type']):
+                errors = RestartHandoverSpec().validate(request.json) 
+                job = request.json
+
+                if errors:
+                    raise ValueError(errors)
+
+                res = EventWorkflowJobStatus().get(handover_token=job['handover_token'])
+                spec = res.get_json()
+
+                if spec is None or len(spec) == 0:
+                    raise ValueError(f"handover token {job['handover_token']} not found")
+
+                spec = spec[0] 
+            
+                if spec['params']['status']:
+                    raise ValueError(f"Workflow for handover token {job['handover_token']} is still running, Stop it")
+
+                status = restart_workflow(job['restart_type'], spec['params'])
+
+                return redirect(url_for('EventWorkflowJobStatusHandover', handover_token=job['handover_token']))
+
+
+        except Exception as e:
+            return Response(str(e) , status=400)
+
+class EventStopWorkflow(SwaggerView):
+    parameters=StopHandoverSpec  
+    tags = [ "Stop Event Workflow " ]
+    responses = {
+        200: {
+            "description": "Handover Token for Workflow",
+        }
+    }
+
+    def post(self):
+        """
+        Stop Event Workflow 
+        """
+        try:
+            
+            
+            if json_pattern.match(request.headers['Content-Type']):
+                errors = StopHandoverSpec().validate(request.json) 
+                job = request.json
+
+                if errors:
+                    raise ValueError(errors)
+
+                res = EventWorkflowJobStatus().get(handover_token=job['handover_token'])
+                spec = res.get_json()
+
+                if spec is None or len(spec) == 0:
+                    raise ValueError(f"handover token {job['handover_token']} not found")
+        
+                spec = spec[0] 
+                if spec['params']['workflow'] == 'Done' :
+                    raise ValueError(f"Workflow for handover token {job['handover_token']} is already completed ")
+
+                if spec['params']['status'] : 
+                    if spec['params']['current_job'].get('job_id', False) :
+                        job_id = job.get('job_id', spec['params']['current_job']['job_id'])
+                        status = stop_running_job( job_id, spec['params'])
+                    else :
+                        raise ValueError(f"Job not started : {spec['params']['current_job']['job_id']}  ")
+                else:
+                   raise ValueError(f"Workflow for handover token {job['handover_token']} is already stopped ")
+
+                return jsonify(status)
+                #return redirect(url_for('EventWorkflowJobStatus'))
+
+        except Exception as e:
+            return Response(str(e) , status=400)
+
 class EventWorkflowJobStatus(SwaggerView):
 
     parameters = [
+        {
+            "name": "release",
+            "in": "path",
+            "type": "string",
+            "default": str(app.config['RELEASE'])
+        },
         {
             "name": "handover_token",
             "in": "path",
@@ -170,29 +283,103 @@ class EventWorkflowJobStatus(SwaggerView):
         Event Workflow Jobs List
         """
         try:
+            release = request.args.get('release', str(app.config['RELEASE']))
             format = request.args.get('format', None)
 
             if format and format == 'json':
                 return render_template('ensembl/qrp/list.html')
 
             es = Elasticsearch([{'host': es_host, 'port': es_port}])
-            if handover_token:
-                res = es.search(index=es_index, body={
-                        "query": {
-                            "match": {
-
-                                "handover_token": handover_token
-                            }
-                        },
-                        "size": 1,
-                        })
-            else:
-                res = es.search(index=es_index, body= {"size":300, "query": {"match_all": {}}})
-
             jobs = []
 
-            for doc in res['hits']['hits']:
-                jobs.append(doc['_source'])
+            if handover_token:
+                res = es.search(index=es_index, body={
+                    "size":0,
+                    "query": {
+                        "bool": {
+                        "must": [
+                            {"term": {"params.handover_token.keyword": str(handover_token)}},
+                            {"query_string": {"fields": ["report_type"],"query": "(INFO|ERROR)","analyze_wildcard": "true"}},
+                        ]
+                        }
+                    },
+                    "aggs": {
+                        "top_result": {
+                        "top_hits": {
+                        "size": 1, 
+                            "sort": {
+                            "report_time" : "desc"
+                            }
+                        }
+                        }
+                    },
+                    "sort": [
+                        {
+                        "report_time": {
+                            "order": "desc"
+                        }
+                        }
+                    ]
+                })
+                for doc in res['aggregations']['top_result']['hits']['hits']:
+                    jobs.append(doc['_source'])
+        
+            else:
+                #res = es.search(index=es_index, body= {"size":300, "query": {"match_all": {}}})
+                res = es.search(index=es_index, body={
+                    "size":0,
+                    "query": {
+                        "bool": {
+                        "must": [
+                            {
+                            "query_string": {
+                                "fields": [
+                                    "report_type"
+                                ],
+                                "query": "(INFO|ERROR)",
+                                "analyze_wildcard": "true"
+                                }
+                            },
+                            {
+                            "query_string": {
+                                "fields": [
+                                "params.tgt_uri"
+                                ],
+                                "query": "/.*_{}(_[0-9]+)?/".format(release)
+                            }
+                            }
+                        ]
+                        }
+                    },
+                    "aggs": {
+                        "handover_token": {
+                        "terms": {
+                            "field": "params.handover_token.keyword",
+                            "size": 1000
+                        },
+                        "aggs": {
+                            "top_result": {
+                            "top_hits": {
+                                "size": 1, 
+                                "sort": {
+                                "report_time" : "desc"
+                                }
+                            }
+                            }
+                        }
+                        }
+                    },
+                    "sort": [
+                        {
+                        "report_time": {
+                            "order": "desc"
+                        }
+                        }
+                    ]
+                    })
+                for each_handover_bucket in res['aggregations']['handover_token']['buckets'] :
+                    for doc in each_handover_bucket['top_result']['hits']['hits']: 
+                        jobs.append(doc['_source'])    
 
             return jsonify(jobs)   
         except Exception  as e:
@@ -235,9 +422,22 @@ class EventRecords(SwaggerView):
         except Exception as e :
             return Response(str(e) , status=400)
 
+
 app.add_url_rule(
-    '/submit/workflow',
+    '/workflow/submit',
     view_func=EventWorkflow.as_view('SubmitWorkflow'),
+    methods=['POST']
+)
+
+app.add_url_rule(
+    '/workflow/restart',
+    view_func=EventRestartWorkflow.as_view('RestartWorkflow'),
+    methods=['POST']
+)
+
+app.add_url_rule(
+    '/workflow/stop',
+    view_func=EventStopWorkflow.as_view('StopWorkflow'),
     methods=['POST']
 )
 
@@ -251,18 +451,6 @@ app.add_url_rule(
     '/workflows/<handover_token>',
     view_func=EventWorkflowJobStatus.as_view('EventWorkflowJobStatusHandover'),
     methods=['GET']
-)
-
-app.add_url_rule(
-    '/add/record',
-    view_func=EventRecords.as_view('InsertEventRecord'),
-    methods=['POST']
-)
-
-app.add_url_rule(
-    '/add/record',
-    view_func=EventRecords.as_view('UpdateEventRecord'),
-    methods=['PUT']
 )
 
 if __name__ == "__main__":
