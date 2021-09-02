@@ -174,7 +174,7 @@
                     "-antispecies": "sars_cov_2",
                     "-rnaseq_email": "ensembl-genebuild@ebi.ac.uk",
                     "-production_queue": "production-rh74",
-                    "datamover_queue": "production-rh74",
+                    "-datamover_queue": "production-rh74",
                     {{ pipe_param('species', species) }},
                     {{ pipe_param('division', division)  }}
                 },
