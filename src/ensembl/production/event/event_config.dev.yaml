@@ -1,0 +1,2 @@
+#celery_broker_url: 'pyamqp://guest:guest@ensrabbitmq:5672/%2F'
+#celery_result_backend: 'rpc://guest:guest@ensrabbitmq:5672/%2F'
