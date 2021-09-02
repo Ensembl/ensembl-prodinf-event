@@ -10,11 +10,11 @@ class config():
                                                                             'event_config.dev.yaml'))
         file_config = load_config_yaml(config_file_path)
         report_server = os.environ.get("REPORT_SERVER",
-                                file_config.get('report_server', "amqp://qrp:arp@hx-cluster:31772/qrp"))
+                                file_config.get('report_server', "amqp://guest:guest@localhost:5672/"))
         report_exchange = os.environ.get("REPORT_EXCHANGE",
-                                 file_config.get('report_exchange', 'report_exchange'))
+                                 file_config.get('report_exchange', 'event_report_exchange'))
         report_exchange_type = os.environ.get("REPORT_EXCHANGE_TYPE",
-                                      file_config.get('report_exchange_type', 'direct'))                                 
+                                      file_config.get('report_exchange_type', 'topic'))                                 
         event_uri = os.environ.get("EVENT_URI",
                                    file_config.get('event_uri', 'http://localhost:5000/'))
 
@@ -29,27 +29,43 @@ class EventConfig(config):
                                 config.file_config.get('process_lookup_file', 
                                 os.path.join(os.path.dirname(__file__), "./process_lookup.json")))
 
-        ES_HOST = os.environ.get('ES_HOST', config.file_config.get('es_host', 'hx-cluster'))
-        ES_PORT = os.environ.get('ES_PORT', config.file_config.get('es_port', '31275'))
-        ES_INDEX = os.environ.get('ES_INDEX', config.file_config.get('es_index', 'workflows'))
-        RELEASE = os.environ.get('ENS_RELEASE', config.file_config.get('ens_release', '102'))
+        hive_url = os.environ.get("HIVE_URL",config.file_config.get('hive_url', 'mysql://user:pass@mysqlhost:3366/'))  
+        farm_user = os.environ.get("FARM_USER",config.file_config.get('user', 'vinay'))  
+        ES_HOST = os.environ.get('ES_HOST', config.file_config.get('es_host', 'es.production.ensembl.org'))
+        ES_PORT = os.environ.get('ES_PORT', config.file_config.get('es_port', '80'))
+        ES_INDEX = os.environ.get('ES_INDEX', config.file_config.get('es_index', 'reports_workflow'))
+        RELEASE = os.environ.get('ENS_RELEASE', config.file_config.get('ens_release', '105'))
+        EG_RELEASE = os.environ.get('EG_RELEASE', config.file_config.get('eg_release', '52'))
+        RR_RELEASE = os.environ.get('RR_RELEASE', config.file_config.get('rr_release', '24'))
 
 class EventCeleryConfig(config):
         """ Config For Celery App"""
 
         broker_url = os.environ.get("CELERY_BROKER_URL",
-                            config.file_config.get('celery_broker_url', 'pyamqp://qrp:qrp@hx-rke-wp-webadmin-18-worker-2.caas.ebi.ac.uk:31772/qrp'))
+                            config.file_config.get('celery_broker_url', 'pyamqp://guest:guest@localhost:5672/'))
         result_backend = os.environ.get("CELERY_RESULT_BACKEND",
-                                config.file_config.get('celery_result_backend', 'rpc://qrp:qrp@hx-rke-wp-webadmin-18-worker-2.caas.ebi.ac.uk:31772/qrp'))
+                                config.file_config.get('celery_result_backend', 'rpc://guest:guest@localhost:5672/'))
         smtp_server = os.environ.get("SMTP_SERVER",
                              config.file_config.get('smtp_server', 'localhost'))
         from_email_address = os.environ.get("FROM_EMAIL_ADDRESS",
                                     config.file_config.get('from_email_address', 'ensembl-production@ebi.ac.uk'))
         retry_wait = int(os.environ.get("RETRY_WAIT",
                                       config. file_config.get('retry_wait', 60)))
-                                
+
+        task_track_started=True
+        result_persistent=True
+
         task_routes = {
-                'ensembl.event.celery.tasks': {'queue': 'event'},
-                'ensembl.event.celery.tasks.workflow_*': {'queue': 'workflow'},
-                'ensembl.event.celery.tasks.monitor_*': {'queue': 'monitor'}
+                #'ensembl.event.celery.tasks': {'queue': 'event'},
+                #'ensembl.event.celery.tasks.workflow_*': {'queue': 'workflow'},
+                #'ensembl.event.celery.tasks.monitor_*': {'queue': 'monitor'}
         }
+
+class PySagaConfig(config):
+
+        REMOTE_HOST = os.environ.get("REMOTE_HOST", config.file_config.get("remote_host", "server.domain")) # remote host name to lauch the pipeline 
+        ADDRESS = os.environ.get("ADDRESS", config.file_config.get("address","18.18.18.18"))
+        USER = os.environ.get("USER", config.file_config.get("user","vinay"))  # vaild user in remote host 
+        PASSWORD = os.environ.get("PASSWORD", "")  # required only if ssh is not configured for remote user 
+        WORKING_DIR = os.environ.get('WORKING_DIR', config.file_config.get("pwd", "/homes/vinay/"))  # Your working directory to store logs and temp dirs
+        HIVE_URL = os.environ.get("HIVE_URL", config.file_config.get("hive_url", None))  # hive database string
