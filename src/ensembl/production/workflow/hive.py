@@ -1,9 +1,9 @@
 def construct_pipeline(job, spec):
     "construct cmd for pipeline to run"
-    hive_dbname = spec['user'] + '_' + job['PipelineName'] + '_' + str(spec['ENS_VERSION']) + '_QRP'
+    hive_dbname = spec['user'] + '_' + job['PipelineName'] + '_' + str(spec['ENS_VERSION']) 
     temp = {
         'init': {'command': [], 'args': [], 'stdout': '', 'stderr': ''},
-        'beekeeper': {'command': ['beekeeper.pl'], 'args': [], 'stdout': '', 'stderr': ''}
+        'beekeeper': {'command': ['bsub -I -q debug -M 2000 -R "rusage[mem=2000]" beekeeper.pl'], 'args': [], 'stdout': '', 'stderr': ''}
     }
     db_uri = spec['hive_url'] + hive_dbname
 
@@ -30,7 +30,7 @@ def construct_pipeline(job, spec):
     temp['init']['args'].append('-hive_force_init')
     temp['init']['args'].append(1)
 
-    temp['init']['command'].append('init_pipeline.pl')
+    temp['init']['command'].append('bsub -I -q debug -M 2000 -R "rusage[mem=2000]" init_pipeline.pl')
     temp['init']['command'].append(job['PipeConfig'])
     temp['init']['command'].append(' ')
     temp['init']['stdout'] = hive_dbname + ".stdout"
