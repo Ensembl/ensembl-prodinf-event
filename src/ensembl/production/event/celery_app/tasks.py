@@ -191,15 +191,16 @@ def restart_workflow(restart_type, spec):
 
 
 @app.task(bind=True, queue="event_job_status", default_retry_delay=120, max_retries=None)
-def event_job_status(self, spec, job_id):
+def event_job_status(self, spec, job_id, host):
     try:
+        host_con_details = pycfg.__dict__[host]
         event_job_status = RemoteCmd(
-        REMOTE_HOST = pycfg.REMOTE_HOST,
-        ADDRESS = pycfg.ADDRESS,  
-        USER = pycfg.USER,
-        PASSWORD = pycfg.PASSWORD, 
-        WORKING_DIR = pycfg.WORKING_DIR
-        )
+            REMOTE_HOST = host_con_details.get('REMOTE_HOST', None),
+            ADDRESS = host_con_details.get('ADDRESS', None),  
+            USER = host_con_details.get('USER',None),
+            PASSWORD = host_con_details.get('PASSWORD', None),
+            WORKING_DIR = host_con_details.get('WORKING_DIR', None),
+            )
         event_status = event_job_status.job_status(job_id)
         if event_status['status']: 
         
@@ -253,13 +254,16 @@ def workflow_run_pipeline(self, run_job, global_spec, init_pipeline=True):
 
      try :
         temp = construct_pipeline(run_job, global_spec)
-        #execute remote command over ssh 
+        #execute remote command over ssh
+        #get fram login details based on host 
+        host = temp['HOST'] if temp['HOST'] else pycfg.DEFAULT_HOST
+        host_con_details = pycfg.__dict__[host]
         exece = RemoteCmd(
-            REMOTE_HOST = pycfg.REMOTE_HOST,
-            ADDRESS = pycfg.ADDRESS,  
-            USER = pycfg.USER,
-            PASSWORD = pycfg.PASSWORD, 
-            WORKING_DIR = pycfg.WORKING_DIR,
+            REMOTE_HOST = host_con_details.get('REMOTE_HOST', None),
+            ADDRESS = host_con_details.get('ADDRESS', None),  
+            USER = host_con_details.get('USER',None),
+            PASSWORD = host_con_details.get('PASSWORD', None),
+            WORKING_DIR = host_con_details.get('WORKING_DIR', None),
             mysql_url=temp['mysql_url']
             )
         global_spec['task_id'] =  self.request.id   
@@ -270,21 +274,21 @@ def workflow_run_pipeline(self, run_job, global_spec, init_pipeline=True):
         job = { 'status' : True }
 
         if init_pipeline:
-        
+
             job = exece.run_job(command=' '.join(temp['init']['command']), args=temp['init']['args'],
-                           stdout=temp['init']['stdout'], stderr=temp['init']['stderr'], synchronus=True)
+                          stdout=temp['init']['stdout'], stderr=temp['init']['stderr'], synchronus=True)
         
         if job['status']:
-
+            
             job = exece.run_job(command=  ' '.join(temp['beekeeper']['command']),
-                               args=temp['beekeeper']['args'], stdout=temp['beekeeper']['stdout'], stderr=temp['beekeeper']['stderr'])
+                              args=temp['beekeeper']['args'], stdout=temp['beekeeper']['stdout'], stderr=temp['beekeeper']['stderr'])
 
             if job['status'] :
-
                 global_spec['current_job']['job_id'] = job['job_id']
+                global_spec['current_job']['HOST'] = host
                 msg = f"Pipeline {run_job['PipelineName']} {job['state']}"
                 log_and_publish(make_report('INFO', msg, global_spec))
-                event_job_status.delay(global_spec, job['job_id'])                  
+                event_job_status.delay(global_spec, job['job_id'], host)                  
             else:
                 raise ValueError(f"Pipeline {run_job['PipelineName']} failed : {job['error']}")
         else:
@@ -342,10 +346,10 @@ def initiate_pipeline(spec, event={}, rerun=False):
         spec.update(prepare_payload(spec)) 
         #set username to run the pipeline 
         if not spec.get('user', None):
-            spec['user']=cfg.farm_user
+            spec['user']=pycfg.FARM_USER 
         #set hive url to run the pipelines
         if not spec.get('hive_url', None): 
-            spec['hive_url']=cfg.hive_url
+            spec['hive_url']=pycfg.HIVE_URL
 
         if 'flow' not in spec or len(spec['flow']) == 0:
             raise Exception('Unable to construct workflow to run production pipeline.')
