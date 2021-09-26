@@ -3,6 +3,7 @@
 {% block flow %}
     {% block coreStats %}
         {
+            "HOST": "CODON",
             "PipelineName": "CoreStats",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::CoreStatistics_conf",
             "PipeParams": {
@@ -23,6 +24,7 @@
     {% endblock coreStats %}
     {% block proteinFeature %}
         {
+            "HOST": "CODON",
             "PipelineName": "ProteinFeatures",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::ProteinFeatures_conf",
             "PipeParams": {
@@ -45,6 +47,7 @@
 
     {% block RNAGeneXref %}
         {
+            "HOST": "CODON",
             "PipelineName": "RNAGeneXref",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::RNAGeneXref_conf",
             "PipeParams": {
@@ -63,6 +66,7 @@
     {% endblock RNAGeneXref %}
     {% block DumpSpeciesForGOA %}
         {
+            "HOST": "CODON",
             "PipelineName": "DumpSpeciesForGOA",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::DumpSpeciesForGOA_conf",
             "PipeParams": {
@@ -83,6 +87,7 @@
     {% block GPADAnnotation %} 
         
         {
+            "HOST": "CODON",
             "PipelineName": "GPADAnnotation",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::GPAD_conf",
             "PipeParams": {
@@ -100,6 +105,7 @@
     {% endblock GPADAnnotation %}    
     {% block StableIDGeneration %}
         {
+            "HOST": "CODON",
             "PipelineName": "UpdatePackedStatus",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::StableIDs_conf",
             "PipeParams": {
@@ -122,6 +128,7 @@
     {% endblock StableIDGeneration %}
     {% block GeneAutoComplete %}
         {
+            "HOST": "CODON",
             "PipelineName": "GeneAutoComplete",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::GeneAutoComplete_conf",
             "PipeParams": {
@@ -144,7 +151,8 @@
     {% endblock GeneAutoComplete %} 
     {% block ProductionDBSync %}
         {
-            "PipelineName": "GeneAutoComplete",
+            "HOST": "CODON",
+            "PipelineName": "ProductionDBSync",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::ProductionDBSync_conf",
             "PipeParams": {
                 "params": {
@@ -163,6 +171,7 @@
     {% endblock ProductionDBSync %}   
     {% block FTPDumps %}
         {
+            "HOST": "CODON",
             "PipelineName": "FTPDumps",
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::FileDumpCore_conf",
             "PipeParams": {
