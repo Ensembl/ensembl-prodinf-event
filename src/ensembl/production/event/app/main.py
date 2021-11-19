@@ -62,6 +62,9 @@ es_host = app.config['ES_HOST']
 es_port = str(app.config['ES_PORT'])
 es_index = app.config['ES_INDEX']
 
+app.url_map.strict_slashes = False
+
+
 with open(config.event_lookup, 'r') as evt_file:
     event_lookup = json.load(evt_file)
 
@@ -150,7 +153,8 @@ class EventWorkflow(SwaggerView):
                     # start the workflow
                     res = initiate_pipeline(job)
                     if res['status']:
-                        return redirect(url_for('EventWorkflowJobStatus'))
+                        return res
+                        #return redirect(url_for('EventWorkflowJobStatus'))
                     else:
                         raise ValueError(res['error'])
                 else:
@@ -237,7 +241,8 @@ class EventStopWorkflow(SwaggerView):
                 if spec['params']['status'] : 
                     if spec['params']['current_job'].get('job_id', False) :
                         job_id = job.get('job_id', spec['params']['current_job']['job_id'])
-                        status = stop_running_job( job_id, spec['params'])
+                        host = spec['params']['current_job']['HOST']
+                        status = stop_running_job( job_id, spec['params'], host)
                     else :
                         raise ValueError(f"Job not started : {spec['params']['current_job']['job_id']}  ")
                 else:
@@ -424,19 +429,19 @@ class EventRecords(SwaggerView):
 
 
 app.add_url_rule(
-    '/workflow/submit',
+    '/workflows/submit',
     view_func=EventWorkflow.as_view('SubmitWorkflow'),
     methods=['POST']
 )
 
 app.add_url_rule(
-    '/workflow/restart',
+    '/workflows/restart',
     view_func=EventRestartWorkflow.as_view('RestartWorkflow'),
     methods=['POST']
 )
 
 app.add_url_rule(
-    '/workflow/stop',
+    '/workflows/stop',
     view_func=EventStopWorkflow.as_view('StopWorkflow'),
     methods=['POST']
 )

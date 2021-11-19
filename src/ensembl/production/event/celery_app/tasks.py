@@ -127,27 +127,32 @@ def prepare_payload(spec):
         raise Exception(str(e))
  
 
-def stop_running_job(job_id, spec):
+def stop_running_job(job_id, spec, host):
     "Stop radical saga job using job_id"
     try:
-        
-        event_job = RemoteCmd(
-            REMOTE_HOST = pycfg.REMOTE_HOST,
-            ADDRESS = pycfg.ADDRESS,  
-            USER = pycfg.USER,
-            PASSWORD = pycfg.PASSWORD, 
-            WORKING_DIR = pycfg.WORKING_DIR
+        host_con_details = pycfg.__dict__[host]
+        event_job_status = RemoteCmd(
+            REMOTE_HOST = host_con_details.get('REMOTE_HOST', None),
+            ADDRESS = host_con_details.get('ADDRESS', None),
+            USER = host_con_details.get('USER',None),
+            PASSWORD = host_con_details.get('PASSWORD', None),
+            WORKING_DIR = host_con_details.get('WORKING_DIR', None),
             )
-        terminate_status = event_job.job_status(job_id, stop_job=True)
-        if terminate_status['status']:
-            update_workflow_status(spec, status=False, error='', workflow=saga.job.CANCELED)
-            msg= f"Workflow Canceled for handover {spec['handover_token']}"
-            log_and_publish(make_report('INFO', msg, spec))
-            # stop all running beekeeper jobs  
 
-        return terminate_status    
+        event_status = event_job_status.job_status(job_id)
+
+        if  event_status['job_status'] in [saga.job.PENDING, saga.job.RUNNING] :
+          terminate_status = event_job_status.job_status(job_id, stop_job=True)
+          if terminate_status['status']:
+              update_workflow_status(spec, status=False, error='', workflow=saga.job.CANCELED)
+              msg= f"Workflow Canceled for handover {spec['handover_token']}"
+              log_and_publish(make_report('INFO', msg, spec))
+              # stop all running beekeeper jobs  
+              event_job_status.stop_hive_jobs(spec['hive_db_uri'])
+              return terminate_status
+        return event_status
     except Exception as e:
-        raise Exception(str(e))  
+        raise Exception(str(e))
     
 
 def restart_workflow(restart_type, spec):
@@ -222,7 +227,7 @@ def event_job_status(self, spec, job_id, host):
                 
             if event_status['job_status'] in [ saga.job.SUSPENDED, saga.job.CANCELED, saga.job.FAILED, saga.job.UNKNOWN]:
                 msg= f"Pipeline {spec['current_job']['PipelineName']} {event_status['job_status']}"
-                update_workflow_status(spec, status=False, error=event_status['error'], workflow=event_status['error'])
+                update_workflow_status(spec, status=False, error=event_status['error'], workflow=event_status['job_status'])
                 log_and_publish(make_report('ERROR', msg, spec)) 
                 return False 
              
@@ -277,12 +282,12 @@ def workflow_run_pipeline(self, run_job, global_spec, init_pipeline=True):
 
             job = exece.run_job(command=' '.join(temp['init']['command']), args=temp['init']['args'],
                           stdout=temp['init']['stdout'], stderr=temp['init']['stderr'], synchronus=True)
-        
+            
         if job['status']:
             
             job = exece.run_job(command=  ' '.join(temp['beekeeper']['command']),
                               args=temp['beekeeper']['args'], stdout=temp['beekeeper']['stdout'], stderr=temp['beekeeper']['stderr'])
-
+            
             if job['status'] :
                 global_spec['current_job']['job_id'] = job['job_id']
                 global_spec['current_job']['HOST'] = host
@@ -303,7 +308,6 @@ def workflow_run_pipeline(self, run_job, global_spec, init_pipeline=True):
 
 @app.task(bind=True, queue="monitor")
 def monitor_process_pipeline(self, spec):
-    print('my work flow')
     try:
 
         if  spec.get('status', False):

@@ -31,6 +31,7 @@ class WorkflowDispatcher():
         :return: str the template path
         """
         template_file = '{tpl_dir}/{tpl_file}.json.tpl'.format(tpl_dir=self.dbtype, tpl_file=self.species)
+        print(template_file)
         if os.path.isfile(os.path.join(self.template_dir, template_file)):
             return template_file
         else:
@@ -42,6 +43,8 @@ class WorkflowDispatcher():
                if os.path.isfile(os.path.join(self.template_dir, template_file)):
                    return template_file
         # default fail over to dbtype/dbtype.json.tpl
+        print( os.path.isfile(os.path.join(self.template_dir, template_file)))
+        print(os.path.join(self.template_dir, template_file))
         return 'base.json.tpl'
 
     def create_template(self, spec, division=None, species=None, antispecies=None):
@@ -51,12 +54,12 @@ class WorkflowDispatcher():
 
 
 
-# obj = WorkflowDispatcher('core')
+# obj = WorkflowDispatcher('test', division='plants', species='triticum_aestivum_jagger')
 # flow = obj.create_template({
 # 			"src_uri": "mysql://ensro@mysql-ens-plants-prod-1:4243/malus_domestica_golden_variation_52_105_1",
 # 			"database": "malus_domestica_golden_variation_52_105_1",
 # 			"contact": "gnaamati@ebi.ac.uk",
 # 			"comment": "variation handover after SIFT run",
 # 			"handover_token": "48d9a56c-dffe-11eb-909f-005056ab00f0",
-# 		}, division='plants')
+# 		}, division='plants', species='triticum_aestivum_jagger')
 # print(flow)

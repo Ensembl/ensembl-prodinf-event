@@ -1,8 +1,8 @@
 def construct_pipeline(job, spec):
     "construct cmd for pipeline to run"
     
-    hive_dbname = spec['user'] + '_' + job['PipelineName'] + '_' + str(spec['ENS_VERSION']) 
-    queue_name = 'production-rh74' if job.get('HOST', None) == 'NOAH' else 'debug'
+    hive_dbname = f"{spec['user']}_{job['PipeParams']['params']['-pipeline_name']}" 
+    queue_name = 'production-rh74' if job.get('HOST', None) == 'NOAH' else 'production'
     bsub_cmd  = 'bsub -I -q ' + queue_name + ' -M 2000 -R "rusage[mem=2000]"'
     db_uri = spec['hive_url'] + hive_dbname
 
