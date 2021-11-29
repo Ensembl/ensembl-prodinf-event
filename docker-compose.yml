@@ -37,7 +37,16 @@ services:
    container_name: 'celery-monitor'
    command: "celery -A ensembl.production.event.celery.tasks worker -l info -Q monitor -n workflow-monitor@%%h"
    networks:
-     - productionsrv     
+     - productionsrv   
+  
+  celery-event-status:  
+   build: '.' 
+   ports:
+     - "5014:5000"      
+   container_name: 'celery-event-status'
+   command: "celery -A ensembl.production.event.celery_app.tasks worker -l info -Q event_job_status -n event-job-process@%%h"
+   networks:
+     - productionsrv    
 
   elasticsearch:
     image: 'docker.elastic.co/elasticsearch/elasticsearch:6.2.4'

@@ -7,3 +7,4 @@ include src/ensembl/production/event/event_config.dev.yaml
 include src/ensembl/production/event/templates/*
 include src/ensembl/production/event/static/css/*
 include src/ensembl/production/event/static/js/*
+recursive-include src/ensembl/production/workflow/tpl *.tpl
