@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # .. See the NOTICE file distributed with this work for additional information
 #    regarding copyright ownership.
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -10,13 +9,4 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-
-import logging.config
-import click
-from ensembl.production.event.app.main import app
-
-@click.command()
-@click.option('-p', '--port', type=int, default=5000)
-def main(port):
-    logging.info('>>>>> Starting development server at http://{}/api/ <<<<<'.format('localhost'))
-    app.run(debug=True, port=port, host='0.0.0.0')
+""" Celery workers """

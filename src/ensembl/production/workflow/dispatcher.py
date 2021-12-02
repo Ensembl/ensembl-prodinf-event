@@ -1,8 +1,22 @@
+#!/usr/bin/env python
+# .. See the NOTICE file distributed with this work for additional information
+#    regarding copyright ownership.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#        http://www.apache.org/licenses/LICENSE-2.0
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
 import os
 import json
 import jinja2
 import re
 import subprocess
+
 
 def sysCmd(command):
     out = subprocess.run(command.split(' '),
@@ -13,8 +27,7 @@ def sysCmd(command):
         return out.stdout
 
 
-class WorkflowDispatcher():
-
+class WorkflowDispatcher:
     template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tpl')
     templateLoader = jinja2.FileSystemLoader(template_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
@@ -39,11 +52,11 @@ class WorkflowDispatcher():
             if os.path.isfile(os.path.join(self.template_dir, template_file)):
                 return template_file
             else:
-               template_file = '{tpl_dir}/{tpl_file}.json.tpl'.format(tpl_dir=self.dbtype, tpl_file=self.dbtype)
-               if os.path.isfile(os.path.join(self.template_dir, template_file)):
-                   return template_file
+                template_file = '{tpl_dir}/{tpl_file}.json.tpl'.format(tpl_dir=self.dbtype, tpl_file=self.dbtype)
+                if os.path.isfile(os.path.join(self.template_dir, template_file)):
+                    return template_file
         # default fail over to dbtype/dbtype.json.tpl
-        print( os.path.isfile(os.path.join(self.template_dir, template_file)))
+        print(os.path.isfile(os.path.join(self.template_dir, template_file)))
         print(os.path.join(self.template_dir, template_file))
         return 'base.json.tpl'
 
@@ -51,8 +64,6 @@ class WorkflowDispatcher():
         template = WorkflowDispatcher.templateEnv.get_template(self._get_template())
         flow_json = template.render(spec=spec, division=division, species=species, antispecies=antispecies)
         return json.loads(flow_json)  # this is where to put args to the template renderer
-
-
 
 # obj = WorkflowDispatcher('test', division='plants', species='triticum_aestivum_jagger')
 # flow = obj.create_template({

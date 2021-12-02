@@ -1,16 +1,28 @@
+# .. See the NOTICE file distributed with this work for additional information
+#    regarding copyright ownership.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#        http://www.apache.org/licenses/LICENSE-2.0
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
 def construct_pipeline(job, spec):
-    "construct cmd for pipeline to run"
-    
-    hive_dbname = f"{spec['user']}_{job['PipeParams']['params']['-pipeline_name']}" 
+    """construct cmd for pipeline to run"""
+
+    hive_dbname = f"{spec['user']}_{job['PipeParams']['params']['-pipeline_name']}"
     queue_name = 'production-rh74' if job.get('HOST', None) == 'NOAH' else 'production'
-    bsub_cmd  = 'bsub -I -q ' + queue_name + ' -M 2000 -R "rusage[mem=2000]"'
+    bsub_cmd = 'bsub -I -q ' + queue_name + ' -M 2000 -R "rusage[mem=2000]"'
     db_uri = spec['hive_url'] + hive_dbname
 
     temp = {
         'init': {'command': [], 'args': [], 'stdout': '', 'stderr': ''},
         'beekeeper': {'command': [f"{bsub_cmd} beekeeper.pl"], 'args': [], 'stdout': '', 'stderr': ''}
     }
-    
+
     # for init pipeline
     for key, value in job['PipeParams']['params'].items():
 
@@ -54,4 +66,3 @@ def construct_pipeline(job, spec):
     temp['mysql_url'] = db_uri
     temp['HOST'] = job.get('HOST', None)
     return temp
-
