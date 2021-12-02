@@ -1,6 +1,30 @@
 {% extends "base.json.tpl" %}
 
+{% set NEXT_RELEASE_VERSION = spec['ENS_VERSION'] + 1 %}
+
 {% block flow %}
+    {% block updatePackedStatus %}
+        {
+            "HOST": "CODON",
+            "PipelineName": "updatePackedStatus",
+            "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::UpdatePackedStatus_conf",
+            "PipeParams": {
+                "params": {
+                    "-registry": "$REG_PROD_DIR/st5-w.pm "
+                    {{ pipe_param('species', species) }},
+                    "-pipeline_name": "pack_status_{{ species }}_{{ spec['ENS_VERSION'] }}" ,
+                    "-history_file": "$PROD_DIR/datachecks/history/st5.json",
+                    "-secondary_release": "{{ NEXT_RELEASE_VERSION }}"
+                },
+                "arguments":[
+                    "$(meta1-w details script_metadata_)"
+                ],
+                "environ":{
+                    "ENS_VERSION": "{{ spec['ENS_VERSION'] }}"
+                }
+            }
+        }
+    {% endblock %}
     {% block coreStats %}
         {
             "HOST": "CODON",
@@ -8,12 +32,12 @@
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::CoreStatistics_conf",
             "PipeParams": {
                 "params": {
-		         "-registry": "$REG_PROD_DIR/st5-w.pm ",	
-                 {{ pipe_param('species', species) }} ,
-                 {{ pipe_param('division', division)  }} ,
-                 "-antispecies": "sars_cov_2" ,
-                 "-pipeline_name": "rr_core_stats_{{ species }}_{{ spec['ENS_VERSION'] }}" ,
-                 "-history_file": "$PROD_DIR/datachecks/history/st5.json"
+                     "-registry": "$REG_PROD_DIR/st5-w.pm ",
+                     {{ pipe_param('species', species) }} ,
+                     {{ pipe_param('division', division)  }} ,
+                     "-pipeline_name": "core_stats_{{ species }}_{{ spec['ENS_VERSION'] }}" ,
+                     "-history_file": "$PROD_DIR/datachecks/history/st5.json",
+                     "-run_all": 0
                 }, 
                 "arguments":[],
                 "environ":{
@@ -35,7 +59,7 @@
                     "-pipeline_dir": "/hps/nobackup2/production/ensembl/ensprod/temp/protein_features",
                     "-config_file": "$PROD_DIR/datachecks/config/st5.json",
                     "-check_interpro_db_version": 1,
-                    "-pipeline_name": "rr_protein_features_{{ species }}_{{ spec['ENS_VERSION'] }}",
+                    "-pipeline_name": "protein_feature_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-uniparc_xrefs": 1,
                     "-uniprot_xrefs": 1
                 },
@@ -44,7 +68,6 @@
             }
         },
     {% endblock proteinFeature %}
-
     {% block RNAGeneXref %}
         {
             "HOST": "CODON",
@@ -55,7 +78,7 @@
                     "-registry": "$REG_PROD_DIR/st5-w.pm",
                     {{ pipe_param('species', species) }},
                     {{ pipe_param('division', division)  }},
-                    "-pipeline_name": "rr_RNA_gene_xref_{{ species }}_{{ spec['ENS_VERSION'] }}",
+                    "-pipeline_name": "RNA_xref_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-config_file": "$PROD_DIR/datachecks/config/st5.json",
                     "-check_interpro_db_version": 1
                 },
@@ -74,8 +97,7 @@
                     "-registry": "$REG_PROD_DIR/st5-w.pm",
                     {{ pipe_param('species', species) }},
                     {{ pipe_param('division', division)  }},
-                    "-pipeline_name": "rr_dump_specie_for_GOA_{{ species }}_{{ spec['ENS_VERSION'] }}",
-                    "-antispecies": "sars_cov_2" ,
+                    "-pipeline_name": "goa_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-release": "{{ spec['ENS_VERSION'] }}"
                 },
                 "arguments": [],
@@ -95,7 +117,7 @@
                     "-registry": "$REG_PROD_DIR/st5-w.pm",
                     {{ pipe_param('species', species) }},
                     {{ pipe_param('division', division)  }},
-                    "-pipeline_name": "rr_gpad_load_{{ species }}_{{ spec['ENS_VERSION'] }}",
+                    "-pipeline_name": "gpad_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-gpad_dirname": "ensemblrapid"
                 },
                 "arguments": [],
@@ -113,7 +135,7 @@
                     "-registry": "$REG_PROD_DIR/st5-w.pm",
                     {{ pipe_param('species', species) }},
                     {{ pipe_param('division', division)  }},
-                    "-pipeline_name": "rr_ensembl_stable_ids_{{ species }}_{{ spec['ENS_VERSION'] }}",
+                    "-pipeline_name": "stable_ids_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-base_dir": "${BASE_DIR}",
                     "-srv_url": "$(st5-w details url)",
                     "-registry": "$REG_PROD_DIR/st5.pm",
@@ -136,7 +158,7 @@
                     "-registry": "$REG_PROD_DIR/st5-w.pm",
                     {{ pipe_param('species', species) }},
                     {{ pipe_param('division', division)  }},
-                    "-pipeline_name": "rr_ensembl_stable_ids_{{ species }}_{{ spec['ENS_VERSION'] }}",
+                    "-pipeline_name": "autocomplete_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-base_dir": "${BASE_DIR}",
                     "-srv_url": "$(st5-w details url)",
                     "-registry": "$REG_PROD_DIR/st5.pm",
@@ -159,10 +181,9 @@
                     "-registry": "$REG_PROD_DIR/st5-w.pm",
                     {{ pipe_param('species', species) }},
                     {{ pipe_param('division', division)  }},
-                    "-pipeline_name": "rr_production_dbsync_{{ species }}_{{ spec['ENS_VERSION'] }}",
+                    "-pipeline_name": "prod_sync_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-group": "core,otherfeatures,rnaseq,variation",
-                    "-history_file": "$PROD_DIR/datachecks/history/st5.json",
-                    "-antispecies": "sars_cov_2"
+                    "-history_file": "$PROD_DIR/datachecks/history/st5.json"
                 },
                 "arguments": [],
                 "environ": {}
@@ -179,8 +200,7 @@
                     "-dump_dir": "/nfs/production/panda/ensembl/production/ensemblftp/rapid-release", 
                     "-ftp_root": "/nfs/ensemblftp/PUBLIC/pub/rapid-release",
                     "-registry": "/nfs/panda/ensembl/production/registries/st5.pm",
-                    "-pipeline_name": "rr_file_dump_core_{{ species }}_{{ spec['ENS_VERSION'] }}",
-                    "-antispecies": "sars_cov_2",
+                    "-pipeline_name": "dump_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-rnaseq_email": "ensembl-genebuild@ebi.ac.uk",
                     "-production_queue": "production-rh74",
                     "-datamover_queue": "production-rh74",
@@ -188,9 +208,7 @@
                     {{ pipe_param('division', division)  }}
                 },
                 "arguments": [],
-                "environ": {
-
-                }
+                "environ": {}
             }
         }
     {% endblock FTPDumps %}        
