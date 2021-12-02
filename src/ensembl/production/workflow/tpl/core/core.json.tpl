@@ -10,10 +10,7 @@
             "PipeParams": {
                 "params": {
                     "-registry": "$REG_PROD_DIR/st5-w.pm ",
-                    "-metadata_host": mysql-ens-meta-prod-1,
-                    "-metadata_port": 4483,
-                    "-metadata_user": ensprod
-                    -metadata_pass s3cr3t
+                    "EMPTY": "$(meta1-w details script_metadata_)",
                     {{ pipe_param('species', species) }},
                     "-pipeline_name": "rr_update_packed_status_{{ species }}_{{ spec['ENS_VERSION'] }}" ,
                     "-history_file": "$PROD_DIR/datachecks/history/st5.json",
@@ -21,15 +18,10 @@
                 },
                 "arguments":[],
                 "environ":{
-                "ENS_VERSION": "{{ spec['ENS_VERSION'] }}"
+                    "ENS_VERSION": "{{ spec['ENS_VERSION'] }}"
                 }
             }
         }
-
-        -pipeline_name rr_update_packed_status_${NEXT_RR_VERSION} \
-        $(meta1-w details script_metadata_) \
-
-
     {% endblock %}
     {% block coreStats %}
         {
