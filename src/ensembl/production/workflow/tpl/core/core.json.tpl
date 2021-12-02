@@ -10,14 +10,15 @@
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::UpdatePackedStatus_conf",
             "PipeParams": {
                 "params": {
-                    "-registry": "$REG_PROD_DIR/st5-w.pm ",
-                    "EMPTY": "$(meta1-w details script_metadata_)",
+                    "-registry": "$REG_PROD_DIR/st5-w.pm "
                     {{ pipe_param('species', species) }},
                     "-pipeline_name": "pack_status_{{ species }}_{{ spec['ENS_VERSION'] }}" ,
                     "-history_file": "$PROD_DIR/datachecks/history/st5.json",
                     "-secondary_release": "{{ NEXT_RELEASE_VERSION }}"
                 },
-                "arguments":[],
+                "arguments":[
+                    "$(meta1-w details script_metadata_)"
+                ],
                 "environ":{
                     "ENS_VERSION": "{{ spec['ENS_VERSION'] }}"
                 }

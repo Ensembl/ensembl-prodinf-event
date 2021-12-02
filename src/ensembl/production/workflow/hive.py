@@ -30,8 +30,6 @@ def construct_pipeline(job, spec):
             for each_item in value.split(','):
                 temp['init']['args'].append(key)
                 temp['init']['args'].append(each_item)
-        elif key.startwith('EMPTY'):
-            temp['init']['args'].append(value)
         else:
             temp['init']['args'].append(key)
             temp['init']['args'].append(value)
