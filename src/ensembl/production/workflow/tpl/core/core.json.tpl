@@ -97,7 +97,6 @@
                     {{ pipe_param('species', species) }},
                     {{ pipe_param('division', division)  }},
                     "-pipeline_name": "goa_{{ species }}_{{ spec['ENS_VERSION'] }}",
-                    "-antispecies": "sars_cov_2" ,
                     "-release": "{{ spec['ENS_VERSION'] }}"
                 },
                 "arguments": [],
@@ -183,8 +182,7 @@
                     {{ pipe_param('division', division)  }},
                     "-pipeline_name": "prod_sync_{{ species }}_{{ spec['ENS_VERSION'] }}",
                     "-group": "core,otherfeatures,rnaseq,variation",
-                    "-history_file": "$PROD_DIR/datachecks/history/st5.json",
-                    "-antispecies": "sars_cov_2"
+                    "-history_file": "$PROD_DIR/datachecks/history/st5.json"
                 },
                 "arguments": [],
                 "environ": {}
@@ -202,7 +200,6 @@
                     "-ftp_root": "/nfs/ensemblftp/PUBLIC/pub/rapid-release",
                     "-registry": "/nfs/panda/ensembl/production/registries/st5.pm",
                     "-pipeline_name": "dump_{{ species }}_{{ spec['ENS_VERSION'] }}",
-                    "-antispecies": "sars_cov_2",
                     "-rnaseq_email": "ensembl-genebuild@ebi.ac.uk",
                     "-production_queue": "production-rh74",
                     "-datamover_queue": "production-rh74",
