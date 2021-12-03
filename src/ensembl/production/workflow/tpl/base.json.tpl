@@ -2,7 +2,7 @@
     {% if values %}
         "-{{ tag }}" : "{{ values }}"
     {% else %}
-       "-{{tag}}" : ""  
+       "-{{ tag }}" : ""
     {% endif %}
 {% endmacro %}
 
