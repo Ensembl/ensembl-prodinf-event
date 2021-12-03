@@ -70,6 +70,8 @@ class RemoteCmd():
         self.mysql_url = kwargs.get('mysql_url', None)  # hive database string
         self.ctx = saga.Context("ssh")
         self.ctx.user_id = self.USER
+        if self.PASSWORD:
+            self.ctx.user_pass = self.PASSWORD
         self.session = saga.Session()
         self.session.add_context(self.ctx)
 
