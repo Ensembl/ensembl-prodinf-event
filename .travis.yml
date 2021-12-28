@@ -17,3 +17,4 @@ script:
 
 after_script:
   - docker-compose -f ./docker-compose-test.yml down
+  
