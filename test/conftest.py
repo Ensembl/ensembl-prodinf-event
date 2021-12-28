@@ -13,12 +13,6 @@ import os
 import pytest
 from ensembl.production.event.app.main import app
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
-
-
 @pytest.fixture
 def appclient():
     app.config['TESTING'] = True
