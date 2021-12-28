@@ -128,7 +128,7 @@ def prepare_payload(spec: dict) -> dict:
 
 
 def stop_running_job(job_id, spec: dict, host: str) -> dict :
-    """[summary]
+    """[Stop Current Running Job Using radical saga job id]
 
     Args:
         job_id ([str]): [radical saga job id ]
@@ -405,7 +405,7 @@ def initiate_pipeline(spec: dict, event: Optional[dict]={}, rerun: Optional[bool
     """[Prepare Workflow payload from handover payload and initialize it]
 
     Args:
-        spec (dict): [Handover Payload specification]
+        spec (dict): [Handover Payload specification]   
         event (Optional[dict], optional): [event received]. Defaults to {}.
         rerun (Optional[bool], optional): [rerun type]. Defaults to False.
 
