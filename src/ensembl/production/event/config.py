@@ -79,7 +79,7 @@ class PySagaConfig(config):
           'ADDRESS' : os.environ.get("ADDRESS_NOAH", config.file_config.get("address_noah","localhost")),
           'USER' :  os.environ.get("USER", config.file_config.get("user","vinay")),  # vaild user in remote host 
           'PASSWORD' : os.environ.get("PASSWORD", ""),  # required only if ssh is not configured for remote user 
-          'WORKING_DIR' : os.environ.get('WORKING_DIR', config.file_config.get("pwd", "/home/vinay/Documents/Ensembl-Master/Projects/ensembl_devlopemnt/refactoring/event/logs/"))  # Your working directory to store logs and temp dirs
+          'WORKING_DIR' : os.environ.get('WORKING_DIR', config.file_config.get("pwd", "/home/ubuntu/logs"))  # Your working directory to store logs and temp dirs
         }
         CODON = {
           'REMOTE_HOST': os.environ.get("REMOTE_HOST_CODON", config.file_config.get("remote_host_codon", "localhost")), 
