@@ -1,5 +1,6 @@
 version: '3'
 services:
+
   rabbitmq:
     container_name: ensrabbitmq
     image: 'rabbitmq:3-management-alpine'
@@ -25,8 +26,8 @@ services:
       - MYSQL_ROOT_PASSWORD=root
     ports:
       - "3306:3306"
-    volumes:
-      - ./test/testdb/test.sql:/docker-entrypoint-initdb.d/1.sql
+    # volumes:
+    #   - ./test/testdb/test.sql:/docker-entrypoint-initdb.d/1.sql
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - productionsrv 
@@ -36,33 +37,23 @@ services:
    image: event_app
    hostname: 'event_app'
    container_name: 'event_app'
-   #command: "/home/appuser/venv/bin/gunicorn --config /home/appuser/gunicorn_config.py -b 0.0.0.0:5000 ensembl.production.event.app.main:app"
+   command: "/home/appuser/venv/bin/gunicorn --config /home/appuser/gunicorn_config.py -b 0.0.0.0:5000 ensembl.production.event.app.main:app"
    ports:
     - "5008:5000"     
    networks:
     - productionsrv 
   
-  ensembl_farm:
-   image: ensembl_farm 
-   build:
-    context: '.'
-    args:
-      ENS_RELEASE_ARG: 105
-    dockerfile: ./test/DockerfileFarm
-   hostname: ensembl_farm
-   container_name: 'ensembl_farm'
-   command: "/home/ubuntu/work/event_app/env/bin/gunicorn --config /home/ubuntu/work/event_app/gunicorn_config.py -b 0.0.0.0:5000 ensembl.production.event.app.main:app"
-   ports:
-    - "5008:5000" 
-   networks:
-    - productionsrv    
-
-  celery-monitor:  
+  celery-monitor:
+    image: celery_monitor 
+    build:
+      context: '.'
+      args:
+        ENS_RELEASE_ARG: 105
+      dockerfile: ./test/DockerfileFarm      
     depends_on:
-      - rabbitmq
-      - ensembl_farm
+      - rabbitmq  
+      - event_app    
     hostname: celery-monitor
-    image: ensembl_farm 
     ports:
      - "5013:5000"      
     container_name: 'celery-monitor'
@@ -71,8 +62,6 @@ services:
      - CELERY_BROKER_URL=pyamqp://guest:guest@ensrabbitmq:5672/
      - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/
     command: bash -c "/usr/sbin/sshd -D &  celery -A ensembl.production.event.celery_app.tasks worker -l info -Q monitor -n workflow-monitor@%%h"
-    volumes:
-      - celeryapp:/home/ubuntu/work:rw
     networks:
      - productionsrv   
 
@@ -80,38 +69,34 @@ services:
     hostname: celery-process
     depends_on:
       - celery-monitor
-    image: ensembl_farm  
+    image: celery_monitor  
     ports:
     - "5012:5000"     
     container_name: 'celery-process'
-    command: bash -c "/usr/sbin/sshd -D & celery -A ensembl.production.event.celery_app.tasks worker -l info -Q workflow -n workflow-process@%%h"
+    command: bash -c "/usr/sbin/sshd -D & celery -A ensembl.production.event.celery_app.tasks worker -l info -Q workflow -n workflow-process@%%h  & celery -A ensembl.production.event.celery_app.tasks worker -l info -Q event_job_status -n event-job-process@%%h"
     environment:
     - REPORT_SERVER=amqp://guest:guest@ensrabbitmq:5672/
     - CELERY_BROKER_URL=pyamqp://guest:guest@ensrabbitmq:5672/
-    - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/
-    volumes:
-      - celeryapp:/home/ubuntu/work:rw    
+    - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/  
     networks:
     - productionsrv     
 
 
-  celery-event-status: 
-   hostname: celery-event-status 
-   depends_on:
-    - celery-monitor  
-   image: ensembl_farm 
-   ports:
-    - "5014:5000"      
-   container_name: 'celery-event-status'
-   command: bash -c "/usr/sbin/sshd -D &  celery -A ensembl.production.event.celery_app.tasks worker -l info -Q event_job_status -n event-job-process@%%h"
-   environment:
-    - REPORT_SERVER=amqp://guest:guest@ensrabbitmq:5672/
-    - CELERY_BROKER_URL=pyamqp://guest:guest@ensrabbitmq:5672/
-    - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/
-   volumes:
-    - celeryapp:/home/ubuntu/work:rw
-   networks:
-    - productionsrv    
+  # celery-event-status: 
+  #  hostname: celery-event-status 
+  #  depends_on:
+  #   - celery-monitor  
+  #  image: celery_monitor 
+  #  ports:
+  #   - "5014:5000"      
+  #  container_name: 'celery-event-status'
+  #  command: bash -c "/usr/sbin/sshd -D &  celery -A ensembl.production.event.celery_app.tasks worker -l info -Q event_job_status -n event-job-process@%%h"
+  #  environment:
+  #   - REPORT_SERVER=amqp://guest:guest@ensrabbitmq:5672/
+  #   - CELERY_BROKER_URL=pyamqp://guest:guest@ensrabbitmq:5672/
+  #   - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/
+  #  networks:
+  #   - productionsrv    
 
   elasticsearch:
     image: 'docker.elastic.co/elasticsearch/elasticsearch:6.2.4'
@@ -131,10 +116,10 @@ services:
       - productionsrv
 
   reporting_app:
-   image: ensembl_farm 
+   image: celery_monitor 
    depends_on:
     - rabbitmq  
-    - ensembl_farm
+    - celery-monitor
    hostname: reporting_app
    container_name: 'reporting_app'
    restart: on-failure
@@ -171,16 +156,3 @@ volumes:
 networks:
   productionsrv:
     driver: bridge  
-    
-
-#     networks:
-#       - dock_net:
-#           ipv4_address: 127.0.0.4    
-
-# networks:
-#   dock_net:
-#     driver: bridge
-#     ipam:
-#      config:
-#        - subnet: 127.0.0.0/8
-#          gateway: 127.0.0.1
