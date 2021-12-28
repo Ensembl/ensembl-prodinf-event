@@ -12,12 +12,14 @@
 
 import pytest
 import requests
-
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from requests.exceptions import ConnectionError
 from marshmallow import RAISE
 from ensembl.production.workflow.dispatcher import WorkflowDispatcher
 from ensembl.production.event.models.schema import HandoverSpec, RestartHandoverSpec, StopHandoverSpec
 import json 
+import time
 
 def is_responsive(url):
     try:
@@ -26,6 +28,24 @@ def is_responsive(url):
             return True
     except ConnectionError:
         return False
+
+def requests_retry_session(
+    retries=10,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    return session
 
     
 def test_invalid_handover_payload(appclient, event_payload):
@@ -50,21 +70,34 @@ def test_valid_workflow_stop_schema(appclient, workflow_restart_payload):
     restart_schema = RestartHandoverSpec()
     assert restart_schema.loads(json_data=json.dumps(workflow_restart_payload), unknown=RAISE)
     
- 
-@pytest.fixture(scope="session")
-def http_service(docker_ip, docker_services):
-    """Ensure that HTTP service is up and responsive."""
 
-    # `port_for` takes a container port and returns the corresponding host port
-    port = docker_services.port_for("event_app", 5000)
-    url = "http://{}:{}".format(docker_ip, port)
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_responsive(url)
-    )
-    return url
+def test_event_app_doc_status(): 
+    response = requests_retry_session().get(f"http://localhost:5008/apidocs")
+    assert response.status_code == 200
+        
+def test_submit_workflow(workflow_integration_payload):
+    response = requests_retry_session().post("http://localhost:5008/workflows/submit", json=workflow_integration_payload)
+    res = response.json()['spec']
+    assert response.status_code == 200
+    assert res['handover_token'] == workflow_integration_payload['handover_token']
+    assert res['status'] == True
+    assert res['database'] == workflow_integration_payload['database']
+    assert bool(res['current_job']) == False
+    assert len(res['flow']) == 1    
+    assert len(res['completed_jobs']) == 0
+    
 
-# def test_status_code(http_service):
-#     status = 200
-#     response = requests.get(http_service)
-
-#     assert response.status_code == status
+def test_workflow_completed_status(workflow_integration_payload):
+    timeout = time.time() + 60*15 
+    
+    while True:
+        
+        response = requests_retry_session().get(f"http://localhost:5008/workflows/{workflow_integration_payload['handover_token']}")
+        spec = response.json()[0]
+        if time.time() > timeout or spec['params']['workflow'] != 'STARTED' or spec['report_type'] == 'ERROR':
+            break
+    
+    assert len(spec['params']['flow']) != 0
+    assert bool(spec['params']['current_job']) == False
+    assert len(spec['params']['completed_jobs']) == 1
+    assert spec['message'] == f"Workflow completed for handover {workflow_integration_payload['handover_token']}"

@@ -13,10 +13,30 @@ import os
 import pytest
 from ensembl.production.event.app.main import app
 
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-@pytest.fixture(scope="session")
-def docker_compose_file(pytestconfig):
-    return os.path.join(str(pytestconfig.rootdir), "docker-compose.yml")
+
+# pytest_plugins = ["docker_compose"]
+
+# @pytest.fixture(scope="session")
+# def docker_compose_file(pytestconfig):
+#     return os.path.join(str(pytestconfig.rootdir), "docker-compose-test.yml")
+
+
+# @pytest.fixture(scope="module")
+# def event_app_url(module_scoped_container_getter):
+#     """ Wait for the event_app to become responsive """
+#     request_session = requests.Session()
+#     retries = Retry(total=5, backoff_factor=3, status_forcelist=[500, 502, 503, 504])
+#     request_session.mount("http://", HTTPAdapter(max_retries=retries))
+
+#     service = module_scoped_container_getter.get("event_app").network_info[0]
+#     api_url = f"http://{service.hostname}:{service.host_port}"
+#     return api_url
+
+
 
 @pytest.fixture
 def appclient():
@@ -85,3 +105,21 @@ def workflow_restart_payload():
 			"handover_token": "61c0c242-d282-11eb-a0d0-005056ab00f0",
             "restart_type": "BEEKEEPER",
     } 
+
+@pytest.fixture
+def workflow_integration_payload():
+    return {
+		"src_uri": "mysql://root:root@ensmysql:3306/triticum_aestivum_jagger_test_52_105_1",
+		"database": "triticum_aestivum_jagger_test_52_105_1",
+		"contact": "vinay@ebi.ac.uk",
+		"comment": "wheat cultivars handover 105",
+		"source": "Handover",
+		"handover_token": "61c0c242-d282-11eb-a0d0-005056ab00f3",
+		"tgt_uri": "mysql://root:root@ensmysql:3306/triticum_aestivum_jagger_test_52_105_1",
+		"staging_uri": "mysql://root:root@ensmysql:3306/",
+		"db_division": "test",
+		"db_type": "core",
+		"EG_VERSION": 52,
+		"ENS_VERSION": 105,
+		"RR_VERSION": 24                	
+	}

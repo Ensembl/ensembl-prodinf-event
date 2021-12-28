@@ -74,7 +74,7 @@ class EventCeleryConfig(config):
 class PySagaConfig(config):
 
         NOAH = {
-          'REMOTE_HOST': os.environ.get("REMOTE_HOST_NOAH", config.file_config.get("remote_host_noah", "noah-login-01")), 
+          'REMOTE_HOST': os.environ.get("REMOTE_HOST_NOAH", config.file_config.get("remote_host_noah", "localhost")), 
           #'ADDRESS' : os.environ.get("ADDRESS_NOAH", config.file_config.get("address_noah","10.7.95.60")),
           'ADDRESS' : os.environ.get("ADDRESS_NOAH", config.file_config.get("address_noah","localhost")),
           'USER' :  os.environ.get("USER", config.file_config.get("user","vinay")),  # vaild user in remote host 
@@ -85,11 +85,11 @@ class PySagaConfig(config):
           'REMOTE_HOST': os.environ.get("REMOTE_HOST_CODON", config.file_config.get("remote_host_codon", "localhost")), 
           #'ADDRESS' : os.environ.get("ADDRESS_CODON", config.file_config.get("address_codon","10.36.17.176")),
           'ADDRESS' : os.environ.get("ADDRESS_CODON", config.file_config.get("address_codon","localhost")),
-          'USER' :  os.environ.get("USER", config.file_config.get("user","ubuntu")),  # vaild user in remote host 
+          'USER' :  os.environ.get("USER", config.file_config.get("user","root")),  # vaild user in remote host 
           'PASSWORD' : os.environ.get("PASSWORD", ""),  # required only if ssh is not configured for remote user 
           'WORKING_DIR' : os.environ.get('WORKING_DIR', config.file_config.get("pwd", "/home/ubuntu/logs"))  # Your working directory to store logs and temp dirs
         }        
         DEFAULT_HOST_DETAILS = os.environ.get("DEFAULT_HOST_DETAILS", config.file_config.get("default_host_details", "CODON"))
-        FARM_USER = os.environ.get("FARM_USER",config.file_config.get('user', 'ubuntu'))
-        HIVE_URL = os.environ.get("HIVE_URL", config.file_config.get("hive_url", 'mysql://root:root@mensmysql:3306/'))  # hive database string
+        FARM_USER = os.environ.get("FARM_USER",config.file_config.get('user', 'root'))
+        HIVE_URL = os.environ.get("HIVE_URL", config.file_config.get("hive_url", 'mysql://root:root@ensmysql:3306/'))  # hive database string
 

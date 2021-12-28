@@ -91,7 +91,7 @@ def prepare_payload(spec):
 
         src_url = make_url(spec['src_uri'])
         (species_name, db_type, release, assembly) = parse_db_infos(src_url.database)
-        workflow = WorkflowDispatcher(db_type)
+        workflow = WorkflowDispatcher(db_type, species=species_name )
         return workflow.create_template(spec, species=species_name)
     except Exception as e:
         raise Exception(str(e))

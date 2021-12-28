@@ -1,0 +1,150 @@
+FROM ubuntu:18.04 
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=en_US.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=en_US.UTF-8
+
+#--build-arg
+ARG ENS_RELEASE_ARG
+ENV ENS_RELEASE=$ENS_RELEASE_ARG
+ENV home  /home/ubuntu
+ENV user  ubuntu
+
+
+RUN apt-get update && apt-get -y install \
+    build-essential \
+    cpanminus \
+    curl \
+    default-libmysqlclient-dev \
+    build-essential \
+    libmysqlclient-dev \
+    libpng-dev \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    liblzma-dev \
+    libgraphviz-dev \
+    libpq-dev \
+    locales \
+    openssl \
+    openssh-server \
+    openssh-client \
+    perl \
+    perl-base \
+    unzip \
+    git \
+    wget \
+    python3-dev \
+    python3-pip \
+    python3.8-venv \
+    python3.8-dev \
+    python3.8 \
+    graphviz \
+    default-mysql-client \
+    vim && \
+    apt-get -y purge manpages-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN  /etc/init.d/ssh start
+RUN adduser --disabled-password --gecos ''  $user
+RUN chown -R $user:$user $home
+RUN echo 'ubuntu:test' | chpasswd
+RUN echo 'root:doker' | chpasswd
+
+
+RUN sed -i "s/PermitRootLogin prohibit-password/PermitRootLogin yes/" /etc/ssh/sshd_config
+RUN echo 'PermitRootLogin yes' | cat >> /etc/ssh/sshd_config
+
+USER $user
+
+# set perl environment variables
+ENV PERL_PATH=$home/perl/
+ENV PERL5LIB=$PERL_PATH:$PERL_PATH/lib/perl5:$PERL5LIB
+ENV PERL_MM_OPT="INSTALL_BASE=$PERL_PATH"
+ENV PERL_MB_OPT="--install_base $PERL_PATH"
+ENV PATH="$PERL_PATH/bin:$PATH"
+
+#ssh config
+RUN ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N "" && \
+        cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+
+RUN mkdir -p $home/programs
+WORKDIR $home/programs
+RUN git clone https://github.com/Ensembl/ensembl-git-tools.git
+
+WORKDIR $home
+RUN mkdir -p $home/work
+WORKDIR $home/work
+RUN wget https://github.com/bioperl/bioperl-live/archive/bioperl-release-1-6-9.tar.gz
+RUN tar zxf bioperl-release-1-6-9.tar.gz
+RUN mv bioperl-live-bioperl-release-1-6-9 bioperl-1.6.9
+RUN $home/programs/ensembl-git-tools/bin/git-ensembl --clone production
+RUN $home/programs/ensembl-git-tools/bin/git-ensembl --checkout --branch release/$ENS_RELEASE all
+
+RUN export PERL5LIB=$home/work/bioperl-1.6.9/
+ENV PATH $home/programs/ensembl-git-tools/bin:$PATH
+WORKDIR $home/work/ensembl-hive
+RUN cpanm install DBI
+RUN cpanm install Test::JSON
+RUN cpanm install GraphViz
+RUN cpanm --installdeps --with-recommends .
+
+#set ensembl modules to perllib
+ENV PATH $home/work/ensembl-hive/scripts:$PATH
+ENV PERL5LIB $PERL5LIB:$home/work/bioperl-1.6.9
+ENV PERL5LIB $PERL5LIB:$home/work/ensembl-hive/modules
+                       
+ENV PERL5LIB $PERL5LIB:$home/work/ensembl/modules
+ENV PERL5LIB $PERL5LIB:$home/work/ensembl-production/modules
+ENV PERL5LIB $PERL5LIB:$home/work/ensembl-compara/modules
+ENV PERL5LIB $PERL5LIB:$home/work/ensembl-variation/modules
+ENV PERL5LIB $PERL5LIB:$home/work/ensembl-funcgen/modules
+ENV PERL5LIB $PERL5LIB:$home/work/ensembl-test/modules
+ENV PERL5LIB $PERL5LIB:$home/work/ensembl-io/modules
+ENV PATH $home/work/ensembl-hive/scripts:$PATH
+
+
+#setup reporting app BUILD_APP
+WORKDIR $home/work
+RUN git clone https://github.com/Ensembl/ensembl-prodinf-reporting.git
+RUN mkdir $home/work/event_app
+ADD . $home/work/event_app
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+WORKDIR $home/work/event_app
+RUN python3.8 -mvenv env 
+ENV PATH=/home/ubuntu/work/event_app/env/bin:$PATH
+RUN pip install -U setuptools
+RUN pip install --no-cache-dir -r requirements.txt 
+RUN pip install --no-cache-dir .
+WORKDIR $home/work/ensembl-prodinf-reporting
+RUN pip install --no-cache-dir -r requirements.txt 
+RUN pip install --no-cache-dir .
+WORKDIR $home/work/
+
+USER root
+#ssh config for root
+RUN ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N "" && \
+        cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+RUN echo 'Host * \n\
+    StrictHostKeyChecking no \n\
+    UserKnownHostsFile=/dev/null' >  ~/.ssh/config
+RUN echo "export PATH=$PATH:/home/ubuntu/work/ensembl-hive/scripts:/home/ubuntu/programs/ensembl-git-tools/bin" > /etc/environment
+RUN echo "export PERL5LIB=$PERL5LIB:/home/ubuntu/work/ensembl/modules:$home/work/ensembl-production/modules" >> /etc/environment
+RUN echo "export PERL5LIB=$PERL5LIB:/home/ubuntu/work/ensembl-compara/modules:/home/ubuntu/work/ensembl-variation/modules" >> /etc/environment
+RUN echo "export PERL5LIB=$PERL5LIB:/home/ubuntu/work/ensembl-funcgen/modules" >> /etc/environment
+RUN echo "export PERL5LIB=$PERL5LIB:/home/ubuntu/work/ensembl-test/modules:/home/ubuntu/work/ensembl-io/modules" >> /etc/environment
+RUN echo "export PATH=/home/ubuntu/work/ensembl-prodinf-reporting/env/bin:$PATH" >> /etc/environment
+RUN echo "export PATH=/home/ubuntu/work/event_app/env/bin:$PATH" >> /etc/environment
+
+#Add test hive pipeline config file 
+ADD ./test/home/TestEvent_conf.pm /home/ubuntu/TestEvent_conf.pm
+ADD ./test/home/TestEvent_conf.pm  /home/ubuntu/work/ensembl-production/modules/Bio/EnsEMBL/Production/Pipeline/PipeConfig/TestEvent_conf.pm
+EXPOSE 22
+
+
+#CMD ["/usr/sbin/sshd","-D"]
+

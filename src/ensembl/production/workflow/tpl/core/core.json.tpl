@@ -1,6 +1,6 @@
 {% extends "base.json.tpl" %}
 
-{% set NEXT_RELEASE_VERSION = spec['ENS_VERSION'] + 1 %}
+{% set NEXT_RELEASE_VERSION = spec['ENS_VERSION'] | int + 1 %}
 
 {% block flow %}
     {% block updatePackedStatus %}
@@ -10,7 +10,7 @@
             "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::UpdatePackedStatus_conf",
             "PipeParams": {
                 "params": {
-                    "-registry": "$REG_PROD_DIR/st5-w.pm "
+                    "-registry": "$REG_PROD_DIR/st5-w.pm ",
                     {{ pipe_param('species', species) }},
                     "-pipeline_name": "pack_status_{{ species }}_{{ spec['ENS_VERSION'] }}" ,
                     "-history_file": "$PROD_DIR/datachecks/history/st5.json",
@@ -23,7 +23,7 @@
                     "ENS_VERSION": "{{ spec['ENS_VERSION'] }}"
                 }
             }
-        }
+        },
     {% endblock %}
     {% block coreStats %}
         {

@@ -1,0 +1,3 @@
+CREATE DATABASE  sarcophilus_harrisii_core_107_111;
+
+USE sarcophilus_harrisii_core_107_111;

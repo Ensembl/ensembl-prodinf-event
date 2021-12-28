@@ -44,7 +44,6 @@ class WorkflowDispatcher:
         :return: str the template path
         """
         template_file = '{tpl_dir}/{tpl_file}.json.tpl'.format(tpl_dir=self.dbtype, tpl_file=self.species)
-        print(template_file)
         if os.path.isfile(os.path.join(self.template_dir, template_file)):
             return template_file
         else:
@@ -56,8 +55,6 @@ class WorkflowDispatcher:
                 if os.path.isfile(os.path.join(self.template_dir, template_file)):
                     return template_file
         # default fail over to dbtype/dbtype.json.tpl
-        print(os.path.isfile(os.path.join(self.template_dir, template_file)))
-        print(os.path.join(self.template_dir, template_file))
         return 'base.json.tpl'
 
     def create_template(self, spec, division=None, species=None, antispecies=None):

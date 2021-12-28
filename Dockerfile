@@ -5,6 +5,11 @@ RUN useradd --create-home appuser
 WORKDIR /home/appuser
 USER appuser
 
+RUN mkdir /home/appuser/.ssh 
+RUN echo 'Host * \n\
+    StrictHostKeyChecking no \n\
+    UserKnownHostsFile=/dev/null' >  /home/appuser/.ssh/config 
+
 WORKDIR /home/appuser
 
 #copy handover app

@@ -23,7 +23,7 @@ def test_workflow_for_species(event_payload):
     pipeline_params = test_workflow['flow'][0]['PipeParams']['params']
     assert pipeline_params['-species'] == 'triticum_aestivum_jagger'
     assert pipeline_params['-division'] == 'plants'
-    assert pipeline_params['-pipeline_name'] == 'test_rr_core_stats_triticum_aestivum_jagger_105'
+    assert pipeline_params['-pipeline_name'] == 'test_rr_test_event_triticum_aestivum_jagger_105'
 
 def test_workflow_pipeline_cmd(event_payload):
     workflow_obj = WorkflowDispatcher('test', division='plants', species='triticum_aestivum_jagger')
@@ -31,6 +31,6 @@ def test_workflow_pipeline_cmd(event_payload):
     test_workflow.update(event_payload) 
     current_job = test_workflow['flow'][0]
     cmd = construct_pipeline(current_job, test_workflow)
-    assert cmd['HOST'] == 'TEST'
-    assert cmd['mysql_url'] == f"{event_payload['hive_url']}test_test_rr_core_stats_triticum_aestivum_jagger_105"
+    assert cmd['HOST'] == 'CODON'
+    assert cmd['mysql_url'] == f"{event_payload['hive_url']}test_test_rr_test_event_triticum_aestivum_jagger_105"
     assert all( i in cmd for i in ['init', 'beekeeper', 'mysql_url', 'HOST'] )
