@@ -39,8 +39,8 @@ class EventConfig(config):
                                 config.file_config.get('process_lookup_file', 
                                 os.path.join(os.path.dirname(__file__), "./process_lookup.json")))
 
-        # hive_url = os.environ.get("HIVE_URL",config.file_config.get('hive_url', 'mysql://ensadmin:ensembl@mysql-ens-hive-prod-1:4575/'))  
-        # farm_user = os.environ.get("FARM_USER",config.file_config.get('user', 'vinay'))  
+        #hive_url = os.environ.get("HIVE_URL",config.file_config.get('hive_url', 'mysql://test:test@mysql-ens-hive-prod-1:3306/'))  
+        #farm_user = os.environ.get("FARM_USER",config.file_config.get('user', 'ens'))  
         ES_HOST = os.environ.get('ES_HOST', config.file_config.get('es_host', 'elasticsearch'))
         ES_PORT = os.environ.get('ES_PORT', config.file_config.get('es_port', '9200'))
         ES_INDEX = os.environ.get('ES_INDEX', config.file_config.get('es_index', 'reports_workflow'))
