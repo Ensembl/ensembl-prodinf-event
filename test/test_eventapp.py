@@ -92,7 +92,7 @@ def test_workflow_completed_status(workflow_integration_payload):
     
     while True:
         
-        response = requests_retry_session().get(f"http://localhost:5008/workflows/{workflow_integration_payload['handover_token']}")
+        response = requests_retry_session(status_forcelist=(500, 502, 504, 404, 400)).get(f"http://localhost:5008/workflows/{workflow_integration_payload['handover_token']}")
         spec = response.json()[0]
         if time.time() > timeout or spec['params']['workflow'] != 'STARTED' or spec['report_type'] == 'ERROR':
             break
