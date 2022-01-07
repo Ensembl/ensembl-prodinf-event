@@ -30,8 +30,8 @@ def is_responsive(url):
         return False
 
 def requests_retry_session(
-    retries=10,
-    backoff_factor=0.3,
+    retries=5,
+    backoff_factor=20,
     status_forcelist=(500, 502, 504),
     session=None,
 ):
@@ -88,16 +88,23 @@ def test_submit_workflow(workflow_integration_payload):
     
 
 def test_workflow_completed_status(workflow_integration_payload):
+    
     timeout = time.time() + 60*15 
+    response = requests_retry_session(status_forcelist=(500, 502, 504, 404, 400), backoff_factor=30).get(f"http://localhost:9200/reports_workflow")
+    assert response.status_code == 200
     
     while True:
         
-        response = requests_retry_session(status_forcelist=(500, 502, 504, 404, 400)).get(f"http://localhost:5008/workflows/{workflow_integration_payload['handover_token']}")
-        spec = response.json()[0]
-        if time.time() > timeout or spec['params']['workflow'] != 'STARTED' or spec['report_type'] == 'ERROR':
-            break
-    
-    assert len(spec['params']['flow']) != 0
+        response = requests_retry_session(status_forcelist=(500, 502, 504, 404, 400), backoff_factor=30).get(f"http://localhost:5008/workflows/{workflow_integration_payload['handover_token']}")
+        if len(response.json()) :
+            spec = response.json()[0]
+            if spec['params']['workflow'] != 'STARTED' or spec['report_type'] == 'ERROR':
+                break
+            
+        if time.time() > timeout:
+            break  
+              
+    assert len(spec['params']['flow']) == 0
     assert bool(spec['params']['current_job']) == False
     assert len(spec['params']['completed_jobs']) == 1
     assert spec['message'] == f"Workflow completed for handover {workflow_integration_payload['handover_token']}"
