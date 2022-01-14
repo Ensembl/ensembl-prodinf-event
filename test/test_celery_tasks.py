@@ -30,9 +30,9 @@ def test_parse_db_info():
 def test_update_workflow_status(event_payload):
     workflow_obj = WorkflowDispatcher('test', division='plants', species='triticum_aestivum_jagger')
     test_workflow = workflow_obj.create_template(event_payload, division='plants', species='triticum_aestivum_jagger')
-    test_workflow = tasks.update_workflow_status(test_workflow, False, 'Canceled for test', 'Canceled')
+    test_workflow = tasks.update_workflow_status(test_workflow, False, 'Cancelled for test', 'Cancelled')
     assert test_workflow['status'] == False
-    assert test_workflow['error'] == 'Canceled for test'
-    assert test_workflow['workflow'] == 'Canceled'
+    assert test_workflow['error'] == 'Cancelled for test'
+    assert test_workflow['workflow'] == 'Cancelled'
 
 
