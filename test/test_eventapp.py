@@ -95,7 +95,7 @@ def test_workflow_completed_status(workflow_integration_payload):
     
     while True:
         
-        response = requests_retry_session(status_forcelist=(500, 502, 504, 404, 400), backoff_factor=30).get(f"http://localhost:5008/workflows/{workflow_integration_payload['handover_token']}")
+        response = requests_retry_session(status_forcelist=(500, 502, 504, 404, 400, 401), backoff_factor=30).get(f"http://localhost:5008/workflows/{workflow_integration_payload['handover_token']}")
         if len(response.json()) :
             spec = response.json()[0]
             if spec['params']['workflow'] != 'STARTED' or spec['report_type'] == 'ERROR':

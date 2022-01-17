@@ -12,6 +12,7 @@
 #    limitations under the License.
 
 import os
+from pathlib import Path
 from ensembl.production.core.config import load_config_yaml
 
 class config():
@@ -39,7 +40,7 @@ class EventConfig(config):
                                 config.file_config.get('process_lookup_file', 
                                 os.path.join(os.path.dirname(__file__), "./process_lookup.json")))
 
-        #hive_url = os.environ.get("HIVE_URL",config.file_config.get('hive_url', 'mysql://test:test@mysql-ens-hive-prod-1:3306/'))  
+        #hive_url = os.environ.get("HIVE_URL",config.file_config.get('hive_url', 'mysql://test:test@mysqlhiveprod:3306/'))  
         #farm_user = os.environ.get("FARM_USER",config.file_config.get('user', 'ens'))  
         ES_HOST = os.environ.get('ES_HOST', config.file_config.get('es_host', 'elasticsearch'))
         ES_PORT = os.environ.get('ES_PORT', config.file_config.get('es_port', '9200'))
@@ -79,7 +80,7 @@ class PySagaConfig(config):
           'ADDRESS' : os.environ.get("ADDRESS_NOAH", config.file_config.get("address_noah","localhost")),
           'USER' :  os.environ.get("USER", config.file_config.get("user","vinay")),  # vaild user in remote host 
           'PASSWORD' : os.environ.get("PASSWORD", ""),  # required only if ssh is not configured for remote user 
-          'WORKING_DIR' : os.environ.get('WORKING_DIR', config.file_config.get("pwd", "/home/ubuntu/logs"))  # Your working directory to store logs and temp dirs
+          'WORKING_DIR' : os.environ.get('WORKING_DIR', config.file_config.get("pwd", f"{Path.home()}/logs"))  # Your working directory to store logs and temp dirs
         }
         CODON = {
           'REMOTE_HOST': os.environ.get("REMOTE_HOST_CODON", config.file_config.get("remote_host_codon", "localhost")), 
@@ -87,7 +88,7 @@ class PySagaConfig(config):
           'ADDRESS' : os.environ.get("ADDRESS_CODON", config.file_config.get("address_codon","localhost")),
           'USER' :  os.environ.get("USER", config.file_config.get("user","root")),  # vaild user in remote host 
           'PASSWORD' : os.environ.get("PASSWORD", ""),  # required only if ssh is not configured for remote user 
-          'WORKING_DIR' : os.environ.get('WORKING_DIR', config.file_config.get("pwd", "/home/ubuntu/logs"))  # Your working directory to store logs and temp dirs
+          'WORKING_DIR' : os.environ.get('WORKING_DIR', config.file_config.get("pwd", f"{Path.home()}/logs"))  # Your working directory to store logs and temp dirs
         }        
         DEFAULT_HOST_DETAILS = os.environ.get("DEFAULT_HOST_DETAILS", config.file_config.get("default_host_details", "CODON"))
         FARM_USER = os.environ.get("FARM_USER",config.file_config.get('user', 'root'))
