@@ -1,25 +1,22 @@
 {% extends "base.json.tpl" %}
 
 {% block flow %}
-    {% block coreStats %}
+    {% block eventtest %}
         {
-            "HOST": "TEST",
-            "PipelineName": "CoreStats",
-            "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::CoreStatistics_conf",
+            "HOST": "CODON",
+            "TEST": "TRUE",
+            "PipelineName": "TestEvent",
+            "PipeConfig": "Bio::EnsEMBL::Production::Pipeline::PipeConfig::TestEvent_conf",
             "PipeParams": {
                 "params": {
-		         "-registry": "$REG_PROD_DIR/st5-w.pm ",	
-                 {{ pipe_param('species', species) }} ,
-                 {{ pipe_param('division', division)  }} ,
-                 "-antispecies": "sars_cov_2" ,
-                 "-pipeline_name": "test_rr_core_stats_{{ species }}_{{ spec['ENS_VERSION'] }}" ,
-                 "-history_file": "$PROD_DIR/datachecks/history/st5.json"
+                    "-pipeline_name": "test_rr_test_event_{{ species }}_{{ spec['ENS_VERSION'] }}",
+                    {{ pipe_param('species', species) }},
+                    {{ pipe_param('division', division)  }}  
                 }, 
                 "arguments":[],
                 "environ":{
-                    "ENS_VERSION": "{{ spec['ENS_VERSION'] }}"
                 }
             }
         }
-    {% endblock coreStats %}
+    {% endblock eventtest %}
 {% endblock flow %}

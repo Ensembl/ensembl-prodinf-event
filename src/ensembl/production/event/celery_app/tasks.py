@@ -24,11 +24,14 @@ from ensembl.production.event.config import PySagaConfig as pycfg
 from ensembl.production.workflow.dispatcher import WorkflowDispatcher
 from ensembl.production.workflow.hive import construct_pipeline
 from ensembl.production.workflow.monitor import RemoteCmd
+from typing import Optional, Tuple
+
+
 
 # from celery.task.control import revoke
 
 species_pattern = re.compile(
-    r'^(?P<prefix>\w+)_(?P<type>core|rnaseq|cdna|otherfeatures|variation|funcgen)(_\d+)?_(?P<release>\d+)_(?P<assembly>\d+)$')
+    r'^(?P<prefix>\w+)_(?P<type>test|core|rnaseq|cdna|otherfeatures|variation|funcgen)(_\d+)?_(?P<release>\d+)_(?P<assembly>\d+)$')
 compara_pattern = re.compile(r'^ensembl_compara(_(?P<division>[a-z]+|pan)(_homology)?)?(_(\d+))?(_\d+)$')
 ancestral_pattern = re.compile(r'^ensembl_ancestral(_(?P<division>[a-z]+))?(_(\d+))?(_\d+)$')
 
@@ -50,11 +53,18 @@ def log_and_publish(report):
     publisher.publish(report, routing_key)
 
 
-# Automate QRP Workflow
+def update_workflow_status(spec:dict, status:str, error:str, workflow:str) -> dict:
+    """[Update workflow status]
 
-def update_workflow_status(spec, status, error, workflow):
-    """Update workflow status """
+    Args:
+        spec (dict): [Workflow details]
+        status (str): [Current Pipeline status] 
+        error (str): [Workflow error message]
+        workflow (str): [Overall workflow status]
 
+    Returns:
+        [dict]: [Updated Workflow status]
+    """    
     spec['status'] = status
     spec['error'] = error
     spec['workflow'] = workflow
@@ -62,8 +72,18 @@ def update_workflow_status(spec, status, error, workflow):
     return spec
 
 
-def parse_db_infos(database):
-    """Parse database name and extract db_prefix and db_type. Also extract release and assembly for species databases"""
+def parse_db_infos(database: str) -> Tuple:
+    """[Parse database name and extract db_prefix and db_type. Also extract release and assembly for species databases]
+
+    Args:
+        database (str): [Handovered DB to be processed ]
+
+    Raises:
+        ValueError: [ When database does not belongs to valid group (test|core|rnaseq|cdna|otherfeatures|variation|funcgen) ]
+
+    Returns:
+        [type]: [description]
+    """    
     if species_pattern.match(database):
         m = species_pattern.match(database)
         db_prefix = m.group('prefix')
@@ -85,19 +105,42 @@ def parse_db_infos(database):
         raise ValueError("Database type for" + database + " is not expected. Please contact the Production team")
 
 
-def prepare_payload(spec):
-    """Prepare payload to run production pipeline"""
+def prepare_payload(spec: dict) -> dict:
+    """[Update Handover playload with  pipelines to run ]
+
+    Args:
+        spec (dict): [Handover payload]
+
+    Raises:
+        Exception: [When No template found for workflow]
+
+    Returns:
+        dict: [Updated Handover Payload with workflow information/pipeline]
+    """    
     try:
 
         src_url = make_url(spec['src_uri'])
         (species_name, db_type, release, assembly) = parse_db_infos(src_url.database)
-        workflow = WorkflowDispatcher(db_type)
+        workflow = WorkflowDispatcher(db_type, species=species_name )
         return workflow.create_template(spec, species=species_name)
     except Exception as e:
         raise Exception(str(e))
 
 
-def stop_running_job(job_id, spec, host):
+def stop_running_job(job_id, spec: dict, host: str) -> dict :
+    """[Stop Current Running Job Using radical saga job id]
+
+    Args:
+        job_id ([str]): [radical saga job id ]
+        spec (dict): [Workflow payload]
+        host (str): [host name where jobs are running]
+
+    Raises:
+        Exception: [When Job cannot be stopped or already stopped]
+
+    Returns:
+        [dict]: [Stopped jobs details with status]
+    """    
     "Stop radical saga job using job_id"
     try:
         host_con_details = pycfg.__dict__[host]
@@ -125,8 +168,19 @@ def stop_running_job(job_id, spec, host):
         raise Exception(str(e))
 
 
-def restart_workflow(restart_type, spec):
-    "Restart the Workflow"
+def restart_workflow(restart_type: str, spec: dict) -> bool:
+    """[Restart Stopped/Failed Workflows]
+
+    Args:
+        restart_type (str): [Option to restart beekeeper/init/entire workflow ]
+        spec (dict): [Workflow payload]
+
+    Raises:
+        Exception: [When failed to restart the workflow]
+
+    Returns:
+        [bool]: [Restart status]
+    """    
 
     try:
 
@@ -166,7 +220,20 @@ def restart_workflow(restart_type, spec):
 
 
 @app.task(bind=True, queue="event_job_status", default_retry_delay=120, max_retries=None)
-def event_job_status(self, spec, job_id, host):
+def event_job_status(self, spec:dict, job_id, host:str) -> bool:
+    """[Get Pipeline Status and update in ES]
+
+    Args:
+        spec ([dict]): [Workflow payload]
+        job_id ([type]): [radical saga job id]
+        host ([type]): [Host name where the job is running]
+
+    Raises:
+        self.retry: [When Job is running]
+
+    Returns:
+        [bool]: [Job status]
+    """    
     try:
         host_con_details = pycfg.__dict__[host]
         event_job_status = RemoteCmd(
@@ -226,9 +293,20 @@ def event_job_status(self, spec, job_id, host):
 
 @app.task(bind=True, queue="workflow", task_track_started=True,
           result_persistent=True)
-def workflow_run_pipeline(self, run_job, global_spec, init_pipeline=True):
-    """Celery worker to initiate pipeline and its beekeeper"""
+def workflow_run_pipeline(self, run_job: dict, global_spec: dict, init_pipeline: Optional[bool]=True):
+    """[Celery worker to initiate the pipeline and its beekeeper]
 
+    Args:
+        run_job (dict): [Current pipeline job to start]
+        global_spec (dict): [Workflow information]
+        init_pipeline (Optional[bool], optional): [to initiate the hive init_pipeline]. Defaults to True.
+
+    Raises:
+        ValueError: [When failed to initialize pipeline]
+
+    Returns:
+        [bool]: [pipeline initiation status]
+    """    
     try:
         temp = construct_pipeline(run_job, global_spec)
         # execute remote command over ssh
@@ -280,7 +358,15 @@ def workflow_run_pipeline(self, run_job, global_spec, init_pipeline=True):
 
 
 @app.task(bind=True, queue="monitor")
-def monitor_process_pipeline(self, spec):
+def monitor_process_pipeline(self, spec: dict):
+    """[Checks Workflows Status and pending pipelines to run]
+
+    Args:
+        spec (dict): [Workflow payload details]
+
+    Returns:
+        [bool]: [Workflow status]
+    """    
     try:
 
         if spec.get('status', False):
@@ -315,9 +401,20 @@ def monitor_process_pipeline(self, spec):
     return True
 
 
-def initiate_pipeline(spec, event={}, rerun=False):
-    """Initiates the qrp pipelines for given payload """
+def initiate_pipeline(spec: dict, event: Optional[dict]={}, rerun: Optional[bool]=False) -> dict:
+    """[Prepare Workflow payload from handover payload and initialize it]
 
+    Args:
+        spec (dict): [Handover Payload specification]   
+        event (Optional[dict], optional): [event received]. Defaults to {}.
+        rerun (Optional[bool], optional): [rerun type]. Defaults to False.
+
+    Raises:
+        Exception: [When failed to prepare workflow payload]
+
+    Returns:
+        dict: [Workflow initialize status with payload information]
+    """    
     try:
         # prepare the payload with production pipelines based on dbtype and division
         spec.update(prepare_payload(spec))

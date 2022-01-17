@@ -16,9 +16,10 @@ import json
 import jinja2
 import re
 import subprocess
+from typing import Optional
 
 
-def sysCmd(command):
+def sysCmd(command):  
     out = subprocess.run(command.split(' '),
                          text=True)
     if out.returncode != 0:
@@ -28,23 +29,31 @@ def sysCmd(command):
 
 
 class WorkflowDispatcher:
+    """[Constructs Workflow template for given dbtype/division/species]
+
+    Args:
+        dbtype (str): [Database Type to select the workflow template]
+        division (str, optional): [Division name to select workflow template]. Defaults to None.
+        species (str, optional): [Species name to select workflow template]. Defaults to None.
+    """   
+    
     template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tpl')
     templateLoader = jinja2.FileSystemLoader(template_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
     templateEnv.globals['sysCommand'] = sysCmd
 
-    def __init__(self, dbtype, division=None, species=None):
+    def __init__(self, dbtype:str, division:Optional[str]=None, species:Optional[str]=None):                
         self.dbtype = dbtype
         self.division = division
         self.species = species
 
-    def _get_template(self):
-        """
-        Try to find from most specific to generic template to get automated process description
-        :return: str the template path
-        """
+    def _get_template(self) -> str:
+        """[Try to find from most specific to generic template to get automated process description]
+
+        Returns:
+            [str]: [template path]
+        """        
         template_file = '{tpl_dir}/{tpl_file}.json.tpl'.format(tpl_dir=self.dbtype, tpl_file=self.species)
-        print(template_file)
         if os.path.isfile(os.path.join(self.template_dir, template_file)):
             return template_file
         else:
@@ -56,11 +65,20 @@ class WorkflowDispatcher:
                 if os.path.isfile(os.path.join(self.template_dir, template_file)):
                     return template_file
         # default fail over to dbtype/dbtype.json.tpl
-        print(os.path.isfile(os.path.join(self.template_dir, template_file)))
-        print(os.path.join(self.template_dir, template_file))
         return 'base.json.tpl'
 
-    def create_template(self, spec, division=None, species=None, antispecies=None):
+    def create_template(self, spec: dict, division: Optional[str]=None, species: Optional[str]=None, antispecies: Optional[str]=None) -> dict:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+        """[Creates Workflow template from given tpl files]
+
+        Args:
+            spec (dict): [Handover payload details]
+            division (str, optional): [Division information for pipeline ]. Defaults to None.
+            species (str, optional): [Species information for pipeline]. Defaults to None.
+            antispecies (str, optional): [Species name not to inclue in pipeline]. Defaults to None.
+
+        Returns:
+            dict: [Workflow template with pipeline arguments]
+        """         
         template = WorkflowDispatcher.templateEnv.get_template(self._get_template())
         flow_json = template.render(spec=spec, division=division, species=species, antispecies=antispecies)
         return json.loads(flow_json)  # this is where to put args to the template renderer

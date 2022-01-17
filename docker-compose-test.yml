@@ -1,0 +1,158 @@
+version: '3'
+services:
+
+  rabbitmq:
+    container_name: ensrabbitmq
+    image: 'rabbitmq:3-management-alpine'
+    volumes:
+      - './rabbitmq_config/rabbit_event_definition.json:/opt/definitions.json:rw'
+      - './rabbitmq_config/rabbitmq.config:/etc/rabbitmq/rabbitmq.conf'
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:15672"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+    networks:
+      - productionsrv  
+
+  ensmysql:
+    restart: always
+    container_name: 'ensmysql'
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - "3306:3306"
+    # volumes:
+    #   - ./test/testdb/test.sql:/docker-entrypoint-initdb.d/1.sql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - productionsrv 
+
+  event_app:
+   build: '.'
+   image: event_app
+   hostname: 'event_app'
+   container_name: 'event_app'
+   command: "/home/appuser/venv/bin/gunicorn --config /home/appuser/gunicorn_config.py -b 0.0.0.0:5000 ensembl.production.event.app.main:app"
+   ports:
+    - "5008:5000"     
+   networks:
+    - productionsrv 
+  
+  celery-monitor:
+    image: celery_monitor 
+    build:
+      context: '.'
+      args:
+        ENS_RELEASE_ARG: 105
+      dockerfile: ./test/DockerfileFarm      
+    depends_on:
+      - rabbitmq  
+      - event_app    
+    hostname: celery-monitor
+    ports:
+     - "5013:5000"      
+    container_name: 'celery-monitor'
+    environment:
+     - REPORT_SERVER=amqp://guest:guest@ensrabbitmq:5672/
+     - CELERY_BROKER_URL=pyamqp://guest:guest@ensrabbitmq:5672/
+     - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/
+    command: bash -c "/usr/sbin/sshd -D &  celery -A ensembl.production.event.celery_app.tasks worker -l info -Q monitor -n workflow-monitor@%%h"
+    networks:
+     - productionsrv   
+
+  celery-process:
+    hostname: celery-process
+    depends_on:
+      - celery-monitor
+    image: celery_monitor  
+    ports:
+    - "5012:5000"     
+    container_name: 'celery-process'
+    command: bash -c "/usr/sbin/sshd -D & celery -A ensembl.production.event.celery_app.tasks worker -l info -Q workflow -n workflow-process@%%h  & celery -A ensembl.production.event.celery_app.tasks worker -l info -Q event_job_status -n event-job-process@%%h"
+    environment:
+    - REPORT_SERVER=amqp://guest:guest@ensrabbitmq:5672/
+    - CELERY_BROKER_URL=pyamqp://guest:guest@ensrabbitmq:5672/
+    - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/  
+    networks:
+    - productionsrv     
+
+
+  # celery-event-status: 
+  #  hostname: celery-event-status 
+  #  depends_on:
+  #   - celery-monitor  
+  #  image: celery_monitor 
+  #  ports:
+  #   - "5014:5000"      
+  #  container_name: 'celery-event-status'
+  #  command: bash -c "/usr/sbin/sshd -D &  celery -A ensembl.production.event.celery_app.tasks worker -l info -Q event_job_status -n event-job-process@%%h"
+  #  environment:
+  #   - REPORT_SERVER=amqp://guest:guest@ensrabbitmq:5672/
+  #   - CELERY_BROKER_URL=pyamqp://guest:guest@ensrabbitmq:5672/
+  #   - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/
+  #  networks:
+  #   - productionsrv    
+
+  elasticsearch:
+    image: 'docker.elastic.co/elasticsearch/elasticsearch:6.2.4'
+    container_name: elasticsearch
+    depends_on:
+      - rabbitmq 
+    environment:
+      - http.port=9200
+      - node.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    networks:
+      - productionsrv
+
+  reporting_app:
+   image: celery_monitor 
+   depends_on:
+    - rabbitmq  
+    - celery-monitor
+   hostname: reporting_app
+   container_name: 'reporting_app'
+   restart: on-failure
+   healthcheck:
+    test: ["CMD", "curl", "-f", "http://elasticsearch1:9200"]
+    interval: 30s
+    timeout: 50s
+    retries: 5   
+   environment:
+    - REPORT_SERVER=amqp://guest:guest@ensrabbitmq:5672/
+    - CELERY_BROKER_URL=pyamqp://guest:guest@ensrabbitmq:5672/
+    - CELERY_RESULT_BACKEND=rpc://guest:guest@ensrabbitmq:5672/  
+    - DEBUG=True
+    - REPORTER_TYPE=elasticsearch
+    - AMQP_PREFETCH_COUNT=10
+    - AMQP_QUEUE=event_persistent_report
+    - AMQP_HOST=ensrabbitmq
+    - AMQP_PORT=5672
+    - AMQP_USER=guest
+    - AMQP_PASS=guest
+    - ES_HOST=elasticsearch
+    - ES_PORT=9200
+    - ES_INDEX=reports_workflow
+    - ES_DOC_TYPE=report
+    - SMTP_HOST=127.0.0.1
+    - SMTP_PORT=25  
+   command: "python /home/ubuntu/work/ensembl-prodinf-reporting/ensembl/production/reporting/amqp_reporter.py"
+   networks:
+    - productionsrv
+
+volumes:
+  celeryapp:
+
+networks:
+  productionsrv:
+    driver: bridge  

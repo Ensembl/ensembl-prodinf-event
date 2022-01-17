@@ -10,8 +10,6 @@ Flask-Cors
 flask_wtf
 marshmallow
 apispec
-pytest
-pytest-docker
 gunicorn
 mysqlclient
 radical.saga

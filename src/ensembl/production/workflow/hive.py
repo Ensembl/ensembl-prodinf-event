@@ -10,12 +10,20 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-def construct_pipeline(job, spec):
-    """construct cmd for pipeline to run"""
+def construct_pipeline(job: dict, spec: dict) -> dict:
+    """[Construct command line arguments for radical saga to run pipeline]
+
+    Args:
+        job (dict): [Handover payload details]
+        spec (dict): [Current job details]
+
+    Returns:
+        dict: [Pipeline commandline details for radical saga to run pipeline]
+    """
 
     hive_dbname = f"{spec['user']}_{job['PipeParams']['params']['-pipeline_name']}"
     queue_name = 'production-rh74' if job.get('HOST', None) == 'NOAH' else 'production'
-    bsub_cmd = 'bsub -I -q ' + queue_name + ' -M 2000 -R "rusage[mem=2000]"'
+    bsub_cmd = '' if  job.get('TEST', None) == "TRUE" else 'bsub -I -q ' + queue_name + ' -M 2000 -R "rusage[mem=2000]"'
     db_uri = spec['hive_url'] + hive_dbname
 
     temp = {

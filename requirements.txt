@@ -11,29 +11,17 @@ apache-libcloud==3.3.1
 apispec==4.7.1
     # via -r requirements.in
 attrs==21.2.0
-    # via
-    #   jsonschema
-    #   pytest
-    #   pytest-docker
-bcrypt==3.2.0
-    # via paramiko
+    # via jsonschema
 billiard==3.6.4.0
     # via celery
 bootstrap-flask==1.7.0
     # via -r requirements.in
-cached-property==1.5.2
-    # via docker-compose
 celery==5.0.4
     # via -r requirements.in
 certifi==2020.12.5
     # via
     #   ensembl-prodinf-core
     #   requests
-cffi==1.14.6
-    # via
-    #   bcrypt
-    #   cryptography
-    #   pynacl
 chardet==4.0.0
     # via requests
 click==7.1.2
@@ -52,18 +40,6 @@ click-repl==0.2.0
     # via celery
 colorama==0.4.4
     # via radical.utils
-cryptography==3.4.7
-    # via paramiko
-distro==1.5.0
-    # via docker-compose
-docker[ssh]==5.0.0
-    # via docker-compose
-docker-compose==1.29.2
-    # via pytest-docker
-dockerpty==0.4.1
-    # via docker-compose
-docopt==0.6.2
-    # via docker-compose
 elasticsearch==6.8.2
     # via -r requirements.in
 git+https://github.com/Ensembl/ensembl-prodinf-core.git#egg=ensembl-prodinf-core
@@ -91,11 +67,7 @@ importlib-metadata==4.6.1
     # via
     #   jsonschema
     #   kombu
-    #   pluggy
-    #   pytest
     #   sqlalchemy
-iniconfig==1.1.1
-    # via pytest
 itsdangerous==2.0.1
     # via
     #   flask
@@ -105,9 +77,7 @@ jinja2==3.0.1
     #   -r requirements.in
     #   flask
 jsonschema==3.2.0
-    # via
-    #   docker-compose
-    #   flasgger
+    # via flasgger
 kombu==5.0.2
     # via
     #   celery
@@ -128,43 +98,20 @@ netifaces==0.11.0
     # via radical.utils
 ntplib==0.4.0
     # via radical.utils
-packaging==21.0
-    # via pytest
-paramiko==2.7.2
-    # via docker
 parse==1.19.0
     # via radical.saga
-pluggy==0.13.1
-    # via pytest
 prompt-toolkit==3.0.19
     # via click-repl
-py==1.10.0
-    # via pytest
-pycparser==2.20
-    # via cffi
 pymongo==3.11.4
     # via radical.utils
-pynacl==1.4.0
-    # via paramiko
-pyparsing==2.4.7
-    # via packaging
 pyrsistent==0.18.0
     # via jsonschema
-pytest==6.2.4
-    # via
-    #   -r requirements.in
-    #   pytest-docker
-pytest-docker==0.10.3
-    # via -r requirements.in
 python-dotenv==0.17.1
-    # via
-    #   -r requirements.in
-    #   docker-compose
+    # via -r requirements.in
 pytz==2021.1
     # via celery
-pyyaml==5.4.1
+pyyaml==6.0
     # via
-    #   docker-compose
     #   ensembl-prodinf-core
     #   flasgger
 pyzmq==22.1.0
@@ -183,36 +130,26 @@ requests==2.25.1
     # via
     #   -r requirements.in
     #   apache-libcloud
-    #   docker
-    #   docker-compose
     #   ensembl-prodinf-core
 setproctitle==1.2.2
     # via radical.utils
 six==1.15.0
     # via
-    #   bcrypt
     #   click-repl
-    #   dockerpty
     #   ensembl-prodinf-core
     #   flasgger
     #   flask-cors
     #   jsonschema
-    #   pynacl
     #   sqlalchemy-utils
-    #   websocket-client
 sqlalchemy==1.4.6
     # via
     #   -r requirements.in
     #   ensembl-prodinf-core
     #   sqlalchemy-utils
-sqlalchemy_utils==0.37.0
+sqlalchemy-utils==0.37.0
     # via
     #   -r requirements.in
     #   ensembl-prodinf-core
-texttable==1.6.3
-    # via docker-compose
-toml==0.10.2
-    # via pytest
 typing-extensions==3.10.0.0
     # via importlib-metadata
 urllib3==1.26.6
@@ -225,10 +162,6 @@ vine==5.0.0
     #   celery
 wcwidth==0.2.5
     # via prompt-toolkit
-websocket-client==0.59.0
-    # via
-    #   docker
-    #   docker-compose
 werkzeug==2.0.1
     # via flask
 wtforms==2.3.3
