@@ -34,5 +34,3 @@ def test_update_workflow_status(event_payload):
     assert test_workflow['status'] == False
     assert test_workflow['error'] == 'Cancelled for test'
     assert test_workflow['workflow'] == 'Cancelled'
-
-
