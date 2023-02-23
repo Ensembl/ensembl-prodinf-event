@@ -40,6 +40,7 @@ RUN apt-get update && apt-get -y install \
     python3.8-venv \
     python3.8-dev \
     python3.8 \
+    python3-setuptools \
     graphviz \
     default-mysql-client \
     vim && \
@@ -111,12 +112,14 @@ ENV PATH $home/work/ensembl-hive/scripts:$PATH
 WORKDIR $home/work
 RUN git clone https://github.com/Ensembl/ensembl-prodinf-reporting.git
 RUN mkdir $home/work/event_app
-ADD . $home/work/event_app
+RUN chown $user:$user $home/work/event_app
+COPY --chown=$user . $home/work/event_app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 WORKDIR $home/work/event_app
 RUN python3.8 -mvenv env 
 ENV PATH=/home/ubuntu/work/event_app/env/bin:$PATH
+RUN pip install --upgrade pip
 RUN pip install -U setuptools
 RUN pip install --no-cache-dir -r requirements.txt 
 RUN pip install --no-cache-dir .
