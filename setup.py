@@ -9,6 +9,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+import os
 from pathlib import Path
 
 from setuptools import setup, find_namespace_packages, find_packages
@@ -25,7 +26,7 @@ def import_requirements():
 
 setup(
     name='event',
-    version='1.0.0',
+    version=os.getenv('CI_COMMIT_TAG', version),
     namespace_packages=['ensembl'],
     packages=find_namespace_packages(where='src', include=['ensembl.*']),
     package_dir={'': 'src'}, 

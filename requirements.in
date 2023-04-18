@@ -1,9 +1,9 @@
-ensembl-prodinf-core~=2.0.0
+ensembl-prodinf-core==2.0.5
 Bootstrap-Flask
 celery>=5.0.0,<5.0.5
 Click
 elasticsearch>=6.8.1,<7.0.0
-Flask
+Flask~=2.0.3
 git+https://github.com/flasgger/flasgger@396aca1e0ac1ca60d8b201a3aa10cca94073d010#egg=flasgger
 apispec
 Flask-Cors
@@ -16,7 +16,6 @@ radical.saga
 radical.utils
 requests
 SQLAlchemy
-sqlalchemy_utils==0.37.0
 wtforms
 Jinja2
 python-dotenv==0.17.1
