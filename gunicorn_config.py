@@ -19,7 +19,7 @@
 #
 
 import os
-bind = os.getenv("GUNICORN_BIND", "0.0.0.0:5006")
+bind = os.getenv("GUNICORN_BIND", "0.0.0.0:5000")
 backlog = int(os.getenv("GUNICORN_BACKLOG", "2048"))
 
 #
