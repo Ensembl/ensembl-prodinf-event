@@ -17,6 +17,6 @@ RUN pip install wheel
 RUN pip install --upgrade pip
 RUN pip install .
 
-EXPOSE 5000
-CMD  ["gunicorn", "--config", "/home/appuser/event/gunicorn_config.py", "-b", "0.0.0.0:5000", "ensembl.production.event.app.main:app"]
+EXPOSE 5008
+CMD  ["gunicorn", "--config", "/home/appuser/event/gunicorn_config.py", "ensembl.production.event.app.main:app"]
 
