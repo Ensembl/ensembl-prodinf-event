@@ -14,6 +14,7 @@ COPY --chown=appuser:appuser . /home/appuser/event
 RUN python -m venv /home/appuser/event/venv
 ENV PATH="/home/appuser/event/venv/bin:$PATH"
 RUN pip install wheel
+RUN pip install --upgrade pip
 RUN pip install .
 
 EXPOSE 5000
