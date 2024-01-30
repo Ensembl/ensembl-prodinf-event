@@ -88,10 +88,10 @@ RUN $home/programs/ensembl-git-tools/bin/git-ensembl --checkout --branch release
 RUN export PERL5LIB=$home/work/bioperl-1.6.9/
 ENV PATH $home/programs/ensembl-git-tools/bin:$PATH
 WORKDIR $home/work/ensembl-hive
-RUN cpanm install DBI
-RUN cpanm install Test::JSON
-RUN cpanm install GraphViz
-RUN cpanm --installdeps --with-recommends .
+RUN cpanm -n install DBI
+RUN cpanm -n install Test::JSON
+RUN cpanm -n install GraphViz
+RUN cpanm -n --installdeps --with-recommends .
 
 #set ensembl modules to perllib
 ENV PATH $home/work/ensembl-hive/scripts:$PATH
