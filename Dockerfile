@@ -1,19 +1,22 @@
-
-FROM python:3.7.10
+FROM python:3.9
 
 RUN useradd --create-home appuser
 USER appuser
-WORKDIR /home/appuser
+RUN mkdir -p /home/appuser/event
+WORKDIR /home/appuser/event
+RUN chown appuser:appuser /home/appuser/event
+
 
 #copy handover app
-COPY . /home/appuser
+COPY --chown=appuser:appuser . /home/appuser/event
 
 #Install dependenciesls
-RUN python -m venv /home/appuser/venv
-ENV PATH="/home/appuser/venv/bin:$PATH" 
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir .
+RUN python -m venv /home/appuser/event/venv
+ENV PATH="/home/appuser/event/venv/bin:$PATH"
+RUN pip install wheel
+RUN pip install --upgrade pip
+RUN pip install .
 
 EXPOSE 5000
-CMD  ["/home/appuser/venv/bin/gunicorn", "--config", "/home/appuser/gunicorn_config.py", "-b", "0.0.0.0:5000", "ensembl.production.event.app.main:app"]
+CMD  ["gunicorn", "--config", "/home/appuser/event/gunicorn_config.py", "ensembl.production.event.app.main:app"]
 
