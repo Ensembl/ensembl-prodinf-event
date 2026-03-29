@@ -45,6 +45,9 @@ class EventConfig(config):
         ES_HOST = os.environ.get('ES_HOST', config.file_config.get('es_host', 'elasticsearch'))
         ES_PORT = os.environ.get('ES_PORT', config.file_config.get('es_port', '9200'))
         ES_INDEX = os.environ.get('ES_INDEX', config.file_config.get('es_index', 'reports_workflow'))
+        ES_USER = os.getenv("ES_USER", config.file_config.get("es_user", ""))
+        ES_PASSWORD = os.getenv("ES_PASSWORD", config.file_config.get("es_password", ""))
+        ES_SSL = os.environ.get('ES_SSL', config.file_config.get('es_ssl', "f")).lower() in ['true', '1']
         RELEASE = os.environ.get('ENS_RELEASE', config.file_config.get('ens_release', '105'))
         EG_RELEASE = os.environ.get('EG_RELEASE', config.file_config.get('eg_release', '52'))
         RR_RELEASE = os.environ.get('RR_RELEASE', config.file_config.get('rr_release', '24'))

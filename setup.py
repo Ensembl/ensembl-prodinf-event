@@ -9,6 +9,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+import os
 from pathlib import Path
 
 from setuptools import setup, find_namespace_packages, find_packages
@@ -25,7 +26,7 @@ def import_requirements():
 
 setup(
     name='event',
-    version='1.0.0',
+    version=os.getenv('CI_COMMIT_TAG', version),
     namespace_packages=['ensembl'],
     packages=find_namespace_packages(where='src', include=['ensembl.*']),
     package_dir={'': 'src'}, 
@@ -38,6 +39,7 @@ setup(
     maintainer_email='ensembl-production@ebi.ac.uk',
     description='Ensembl event service',
     python_requires='>=3.7',
+    install_requires=import_requirements(),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
